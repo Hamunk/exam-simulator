@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Calendar, FileText } from "lucide-react";
 import { courses } from "@/data/coursesData";
+import { Header } from "@/components/Header";
 
 const CourseDetail = () => {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ const CourseDetail = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto space-y-8">
           {/* Header */}
