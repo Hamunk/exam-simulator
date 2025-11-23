@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,13 +11,15 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Header } from "@/components/Header";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Check, BookOpen, HelpCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Check, BookOpen, HelpCircle, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCourses } from "@/hooks/useCourses";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { ExamBlock, Question } from "@/types/exam";
+import { validateExamJson } from "@/lib/examJsonValidator";
+import { ExamJsonGuide } from "@/components/exam/ExamJsonGuide";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -80,6 +82,9 @@ const CreateExam = () => {
   const [blocks, setBlocks] = useState<BlockData[]>([]);
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showJsonUpload, setShowJsonUpload] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Pre-fill course info from navigation state
   const state = location.state as { courseCode?: string; courseName?: string } | null;
@@ -238,10 +243,89 @@ const CreateExam = () => {
     }
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/json") {
+      toast.error("Please upload a JSON file");
+      return;
+    }
+
+    setUploadedFile(file);
+  };
+
+  const handleJsonImport = async () => {
+    if (!uploadedFile || !user) return;
+
+    setIsSubmitting(true);
+    try {
+      const text = await uploadedFile.text();
+      const json = JSON.parse(text);
+      
+      const validationResult = validateExamJson(json);
+      
+      if (validationResult.success === false) {
+        toast.error("Invalid JSON format", {
+          description: validationResult.errors.join(", "),
+          duration: 5000,
+        });
+        return;
+      }
+
+      // Now TypeScript knows it's the success case
+      const examData = validationResult.data;
+
+      // Check if course exists
+      const courseExists = courses.some(
+        (c) => c.code.toLowerCase() === examData.courseCode.toLowerCase()
+      );
+      
+      if (!courseExists) {
+        toast.error(
+          `Course ${examData.courseCode} not found. Please create the course first.`,
+          { duration: 5000 }
+        );
+        return;
+      }
+
+      // Get course name
+      const course = courses.find(
+        (c) => c.code.toLowerCase() === examData.courseCode.toLowerCase()
+      );
+
+      // Insert into database
+      const { error } = await supabase.from("user_exams").insert([{
+        user_id: user.id,
+        course_code: examData.courseCode,
+        course_name: course?.name || examData.courseCode,
+        exam_title: examData.examTitle,
+        exam_year: examData.examYear,
+        exam_semester: examData.examSemester,
+        blocks: examData.blocks as any,
+        is_public: examData.isPublic,
+      }]);
+
+      if (error) throw error;
+
+      toast.success("Exam imported successfully!");
+      navigate(`/course/user-${examData.courseCode.toLowerCase().replace(/\s+/g, "-")}`);
+    } catch (error: any) {
+      console.error("Error importing exam:", error);
+      if (error instanceof SyntaxError) {
+        toast.error("Invalid JSON format. Please check your file.");
+      } else {
+        toast.error(error.message || "Failed to import exam");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmitExam = async () => {
     if (!validateCurrentBlock()) return;
     if (!user || !basicInfo || !structure) return;
-    if (isSubmitting) return; // Prevent duplicate submissions
+    if (isSubmitting) return;
 
     setIsSubmitting(true);
     try {
@@ -259,7 +343,6 @@ const CreateExam = () => {
         })),
       }));
 
-      // Get course name from existing courses
       const course = courses.find(
         (c) => c.code.toLowerCase() === basicInfo.courseCode.toLowerCase()
       );
@@ -406,7 +489,7 @@ def fibonacci(n):
           </div>
 
           {/* Step 1: Basic Info */}
-          {step === "basic" && (
+          {step === "basic" && !showJsonUpload && (
             <Card className="p-8">
               <div className="space-y-6">
                 <div>
@@ -496,6 +579,111 @@ def fibonacci(n):
                     </Button>
                   </div>
                 </form>
+
+                {/* Upload JSON Alternative */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">or</span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowJsonUpload(true)}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload exam JSON instead
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {/* JSON Upload Interface */}
+          {showJsonUpload && (
+            <Card className="p-8">
+              <div className="space-y-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold mb-2">Import Exam from JSON</h1>
+                    <p className="text-muted-foreground">Upload a JSON file or use AI to format your exam</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setShowJsonUpload(false);
+                      setUploadedFile(null);
+                    }}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="flex gap-2">
+                  <ExamJsonGuide />
+                </div>
+
+                <div className="border-2 border-dashed border-border rounded-lg p-12 text-center space-y-4">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  
+                  {!uploadedFile ? (
+                    <>
+                      <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
+                      <div>
+                        <p className="text-lg font-semibold mb-1">Upload JSON File</p>
+                        <p className="text-sm text-muted-foreground">
+                          Click to browse or drag and drop your exam JSON file
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        Select File
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-12 h-12 mx-auto text-success" />
+                      <div>
+                        <p className="text-lg font-semibold mb-1">{uploadedFile.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(uploadedFile.size / 1024).toFixed(2)} KB
+                        </p>
+                      </div>
+                      <div className="flex gap-2 justify-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setUploadedFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = "";
+                          }}
+                        >
+                          Remove
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleJsonImport}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? "Importing..." : "Import Exam"}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </Card>
           )}
