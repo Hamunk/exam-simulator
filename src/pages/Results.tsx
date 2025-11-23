@@ -5,7 +5,7 @@ import { QuestionCard } from "@/components/exam/QuestionCard";
 import { BlockHeader } from "@/components/exam/BlockHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Home, ArrowLeft } from "lucide-react";
+import { Home, ArrowLeft, Clock } from "lucide-react";
 import { useState } from "react";
 import { Header } from "@/components/Header";
 
@@ -34,6 +34,22 @@ export default function Results() {
     if (percentage >= 60) return "Not bad! Room for improvement. 📚";
     return "Keep studying and try again! 💪";
   };
+
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${secs}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${secs}s`;
+    } else {
+      return `${secs}s`;
+    }
+  };
+
+  const totalTimeSpent = blockScores.reduce((sum, bs) => sum + (bs.timeSpentSeconds || 0), 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,22 +92,42 @@ export default function Results() {
           </div>
         </Card>
 
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground">
-            Block Breakdown
-          </h2>
-          {blockScores.map((blockScore, index) => {
-            const block = blocks.find((b) => b.id === blockScore.blockId);
-            return (
-              <ScoreDisplay
-                key={blockScore.blockId}
-                score={blockScore.score}
-                maxScore={blockScore.maxScore}
-                blockTitle={block?.title || `Block ${index + 1}`}
-              />
-            );
-          })}
-        </div>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-foreground">
+              Block Breakdown
+            </h2>
+            {blockScores.map((blockScore, index) => {
+              const block = blocks.find((b) => b.id === blockScore.blockId);
+              return (
+                <div key={blockScore.blockId} className="space-y-2">
+                  <ScoreDisplay
+                    score={blockScore.score}
+                    maxScore={blockScore.maxScore}
+                    blockTitle={block?.title || `Block ${index + 1}`}
+                  />
+                  {blockScore.timeSpentSeconds !== undefined && blockScore.timeSpentSeconds > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground pl-4">
+                      <Clock className="w-4 h-4" />
+                      <span>Time spent: {formatTime(blockScore.timeSpentSeconds)}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {totalTimeSpent > 0 && (
+              <Card className="p-4 bg-muted/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <Clock className="w-5 h-5 text-primary" />
+                    <span>Total Time</span>
+                  </div>
+                  <span className="text-lg font-bold text-primary">
+                    {formatTime(totalTimeSpent)}
+                  </span>
+                </div>
+              </Card>
+            )}
+          </div>
 
         <div className="flex gap-4 justify-center pt-4">
           <Button variant="outline" onClick={() => navigate("/")}>

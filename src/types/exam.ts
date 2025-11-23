@@ -23,4 +23,5 @@ export interface BlockScore {
   blockId: string;
   score: number;
   maxScore: number;
+  timeSpentSeconds?: number;
 }

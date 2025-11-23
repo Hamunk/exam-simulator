@@ -47,6 +47,10 @@ export default function Exam() {
   const [existingAttempt, setExistingAttempt] = useState<any>(null);
   const [additionalMinutes, setAdditionalMinutes] = useState("0");
   
+  // Block time tracking
+  const [blockStartTime, setBlockStartTime] = useState<number>(Date.now());
+  const [blockTimeSpent, setBlockTimeSpent] = useState<Record<string, number>>({});
+  
   // Timer states
   const [showTimerDialog, setShowTimerDialog] = useState(true);
   const [timerHours, setTimerHours] = useState("2");
@@ -149,6 +153,20 @@ export default function Exam() {
     setRemainingSeconds(newRemainingSeconds);
     setExamStarted(true);
     setShowResumeDialog(false);
+    
+    // Restore block time tracking if it exists
+    if (existingAttempt.block_scores) {
+      const timeTracking: Record<string, number> = {};
+      existingAttempt.block_scores.forEach((bs: any) => {
+        if (bs.timeSpentSeconds) {
+          timeTracking[bs.blockId] = bs.timeSpentSeconds;
+        }
+      });
+      setBlockTimeSpent(timeTracking);
+    }
+    
+    // Reset start time for current block
+    setBlockStartTime(Date.now());
     
     // Update the attempt with new remaining time if added
     if (additionalTime > 0) {
@@ -315,18 +333,35 @@ export default function Exam() {
         blockId: block.id,
         score,
         maxScore: 5,
+        timeSpentSeconds: blockTimeSpent[block.id] || 0,
       };
     });
   };
 
   const handleSubmitExam = async () => {
+    // Record time spent on final block
+    const currentBlockId = examBlocks[currentBlockIndex].id;
+    const timeSpent = Math.floor((Date.now() - blockStartTime) / 1000);
+    const finalBlockTimeSpent = {
+      ...blockTimeSpent,
+      [currentBlockId]: (blockTimeSpent[currentBlockId] || 0) + timeSpent,
+    };
+    setBlockTimeSpent(finalBlockTimeSpent);
+    
     const blockScores = calculateAllBlockScores();
+    
+    // Update block scores with final time tracking
+    const blockScoresWithTime = blockScores.map(bs => ({
+      ...bs,
+      timeSpentSeconds: finalBlockTimeSpent[bs.blockId] || 0,
+    }));
+    
     const answersArray = Object.values(userAnswers);
     
     // Save completed exam attempt if user is logged in
     if (currentAttemptId && user) {
-      const totalScore = blockScores.reduce((sum, bs) => sum + bs.score, 0);
-      const maxScore = blockScores.length * 5;
+      const totalScore = blockScoresWithTime.reduce((sum, bs) => sum + bs.score, 0);
+      const maxScore = blockScoresWithTime.length * 5;
       const percentage = (totalScore / maxScore) * 100;
 
       await updateAttempt(currentAttemptId, {
@@ -334,7 +369,7 @@ export default function Exam() {
         current_block_index: currentBlockIndex,
         remaining_seconds: remainingSeconds,
         status: "completed",
-        block_scores: blockScores,
+        block_scores: blockScoresWithTime,
         total_score: totalScore,
         max_score: maxScore,
         percentage: Number(percentage.toFixed(2)),
@@ -344,7 +379,7 @@ export default function Exam() {
 
     navigate("/results", { 
       state: { 
-        blockScores,
+        blockScores: blockScoresWithTime,
         userAnswers: answersArray,
         examBlocks,
         attemptId: currentAttemptId,
@@ -355,12 +390,32 @@ export default function Exam() {
   };
 
   const handleNextBlock = () => {
+    // Record time spent on current block
+    const currentBlockId = examBlocks[currentBlockIndex].id;
+    const timeSpent = Math.floor((Date.now() - blockStartTime) / 1000);
+    setBlockTimeSpent(prev => ({
+      ...prev,
+      [currentBlockId]: (prev[currentBlockId] || 0) + timeSpent,
+    }));
+    
+    // Move to next block and reset timer
     setCurrentBlockIndex(currentBlockIndex + 1);
+    setBlockStartTime(Date.now());
   };
 
   const handlePreviousBlock = () => {
     if (currentBlockIndex > 0) {
+      // Record time spent on current block
+      const currentBlockId = examBlocks[currentBlockIndex].id;
+      const timeSpent = Math.floor((Date.now() - blockStartTime) / 1000);
+      setBlockTimeSpent(prev => ({
+        ...prev,
+        [currentBlockId]: (prev[currentBlockId] || 0) + timeSpent,
+      }));
+      
+      // Move to previous block and reset timer
       setCurrentBlockIndex(currentBlockIndex - 1);
+      setBlockStartTime(Date.now());
     }
   };
 
