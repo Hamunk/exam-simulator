@@ -14,7 +14,9 @@ import { Header } from "@/components/Header";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Check, BookOpen, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCourses } from "@/hooks/useCourses";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 import { ExamBlock, Question } from "@/types/exam";
 import {
   Breadcrumb,
@@ -39,10 +41,10 @@ import {
 
 const basicInfoSchema = z.object({
   courseCode: z.string().min(1, "Course code is required").max(20),
-  courseName: z.string().min(1, "Course name is required").max(200),
   examTitle: z.string().min(1, "Exam title is required").max(200),
   examYear: z.string().min(4, "Year is required").max(4),
   examSemester: z.string().min(1, "Semester is required").max(20),
+  isPublic: z.boolean().default(true),
 });
 
 const structureSchema = z.object({
@@ -71,6 +73,7 @@ const CreateExam = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { courses } = useCourses();
   const [step, setStep] = useState<"basic" | "structure" | "blocks">("basic");
   const [basicInfo, setBasicInfo] = useState<BasicInfo | null>(null);
   const [structure, setStructure] = useState<Structure | null>(null);
@@ -85,10 +88,10 @@ const CreateExam = () => {
     resolver: zodResolver(basicInfoSchema),
     defaultValues: {
       courseCode: state?.courseCode || "",
-      courseName: state?.courseName || "",
       examTitle: "",
       examYear: new Date().getFullYear().toString(),
       examSemester: "Spring",
+      isPublic: true,
     },
   });
 
@@ -101,6 +104,19 @@ const CreateExam = () => {
   });
 
   const handleBasicSubmit = (data: BasicInfo) => {
+    // Validate that course exists
+    const courseExists = courses.some(
+      (c) => c.code.toLowerCase() === data.courseCode.toLowerCase()
+    );
+    
+    if (!courseExists) {
+      toast.error(
+        "Course not found. Please create the course first from the home page.",
+        { duration: 5000 }
+      );
+      return;
+    }
+    
     setBasicInfo(data);
     setStep("structure");
   };
@@ -243,15 +259,20 @@ const CreateExam = () => {
         })),
       }));
 
+      // Get course name from existing courses
+      const course = courses.find(
+        (c) => c.code.toLowerCase() === basicInfo.courseCode.toLowerCase()
+      );
+      
       const { error } = await supabase.from("user_exams").insert([{
         user_id: user.id,
         course_code: basicInfo.courseCode,
-        course_name: basicInfo.courseName,
+        course_name: course?.name || basicInfo.courseCode,
         exam_title: basicInfo.examTitle,
         exam_year: basicInfo.examYear,
         exam_semester: basicInfo.examSemester,
         blocks: examBlocks as any,
-        is_public: false,
+        is_public: basicInfo.isPublic,
       }]);
 
       if (error) throw error;
@@ -406,20 +427,9 @@ def fibonacci(n):
                         {basicForm.formState.errors.courseCode.message}
                       </p>
                     )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="courseName">Course Name *</Label>
-                    <Input
-                      id="courseName"
-                      placeholder="e.g., Introduction to Machine Learning"
-                      {...basicForm.register("courseName")}
-                    />
-                    {basicForm.formState.errors.courseName && (
-                      <p className="text-sm text-destructive mt-1">
-                        {basicForm.formState.errors.courseName.message}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Course must exist. Create it from the home page first.
+                    </p>
                   </div>
 
                   <div>
@@ -464,6 +474,20 @@ def fibonacci(n):
                         </p>
                       )}
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="isPublic" className="text-base">Make exam public</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Public exams can be viewed by all users
+                      </p>
+                    </div>
+                    <Switch
+                      id="isPublic"
+                      checked={basicForm.watch("isPublic")}
+                      onCheckedChange={(checked) => basicForm.setValue("isPublic", checked)}
+                    />
                   </div>
 
                   <div className="flex justify-end gap-4 pt-4">

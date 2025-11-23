@@ -7,6 +7,7 @@ import { Brain, Search, BookOpen, User, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { useCourses } from "@/hooks/useCourses";
+import { useUserCourses } from "@/hooks/useUserCourses";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { courses, loading } = useCourses();
+  const { createUserCourse } = useUserCourses();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
   const [newCourseName, setNewCourseName] = useState("");
@@ -33,23 +35,29 @@ const Index = () => {
       course.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddCourse = () => {
+  const handleAddCourse = async () => {
     if (!newCourseCode.trim() || !newCourseName.trim()) {
       toast.error("Please fill in both course code and name");
       return;
     }
     
-    // Navigate to create exam with pre-filled course info
-    navigate("/create-exam", { 
-      state: { 
-        courseCode: newCourseCode.toUpperCase(), 
-        courseName: newCourseName 
-      } 
-    });
-    
-    setIsAddCourseOpen(false);
-    setNewCourseCode("");
-    setNewCourseName("");
+    try {
+      await createUserCourse({
+        course_code: newCourseCode.toUpperCase(),
+        course_name: newCourseName,
+      });
+      
+      toast.success("Course created successfully!");
+      setIsAddCourseOpen(false);
+      setNewCourseCode("");
+      setNewCourseName("");
+    } catch (error: any) {
+      if (error.message?.includes("duplicate")) {
+        toast.error("This course already exists");
+      } else {
+        toast.error("Failed to create course");
+      }
+    }
   };
 
   return (
@@ -127,7 +135,7 @@ const Index = () => {
                     <DialogHeader>
                       <DialogTitle>Add New Course</DialogTitle>
                       <DialogDescription>
-                        Create a new course by providing its code and name. You'll be redirected to create the first exam for this course.
+                        Create a new course. You can add exams to it later.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -155,7 +163,7 @@ const Index = () => {
                         Cancel
                       </Button>
                       <Button onClick={handleAddCourse}>
-                        Continue to Create Exam
+                        Create Course
                       </Button>
                     </div>
                   </DialogContent>

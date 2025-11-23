@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import { courses as hardcodedCourses, Course, Exam } from "@/data/coursesData";
 import { useUserExams } from "./useUserExams";
+import { useUserCourses } from "./useUserCourses";
 
 export function useCourses() {
-  const { userExams, loading } = useUserExams();
+  const { userExams, loading: examsLoading } = useUserExams();
+  const { userCourses, loading: coursesLoading } = useUserCourses();
 
   const allCourses = useMemo(() => {
     // Start with hardcoded courses
@@ -14,6 +16,21 @@ export function useCourses() {
         ...course,
         exams: [...course.exams] // Deep copy to prevent mutation
       });
+    });
+
+    // Add user-created courses (without exams initially)
+    userCourses.forEach(userCourse => {
+      const courseKey = userCourse.course_code.toLowerCase();
+      if (!coursesMap.has(courseKey)) {
+        const normalizedId = `user-${courseKey.replace(/\s+/g, '-')}`;
+        coursesMap.set(courseKey, {
+          id: normalizedId,
+          code: userCourse.course_code,
+          name: userCourse.course_name,
+          exams: [],
+          isUserCreated: true,
+        });
+      }
     });
 
     // Add user-created exams to existing courses or create new courses
@@ -50,7 +67,7 @@ export function useCourses() {
     });
 
     return Array.from(coursesMap.values());
-  }, [userExams]);
+  }, [userExams, userCourses]);
 
   const getCourseById = (courseId: string) => {
     return allCourses.find(c => c.id === courseId);
@@ -72,7 +89,7 @@ export function useCourses() {
 
   return {
     courses: allCourses,
-    loading,
+    loading: examsLoading || coursesLoading,
     getCourseById,
     getCourseByCourseCode,
     getExamById,
