@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { courses } from "@/data/coursesData";
 import { UserAnswer, BlockScore } from "@/types/exam";
 import { BlockHeader } from "@/components/exam/BlockHeader";
@@ -34,10 +34,11 @@ import { useExamAttempts } from "@/hooks/useExamAttempts";
 
 export default function Exam() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { examId } = useParams();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { createAttempt, updateAttempt, getInProgressAttempt } = useExamAttempts();
+  const { createAttempt, updateAttempt } = useExamAttempts();
   
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, UserAnswer>>({});
@@ -60,7 +61,6 @@ export default function Exam() {
   
   // Auto-save reference
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const hasCheckedForAttempt = useRef(false);
 
   // Find the exam and its course
   const courseData = courses.find(course => 
@@ -84,23 +84,17 @@ export default function Exam() {
   const currentBlock = examBlocks[currentBlockIndex];
   const isLastBlock = currentBlockIndex === examBlocks.length - 1;
 
-  // Check for existing in-progress attempt (only once on mount)
+  // Check if we're resuming from history (only show resume dialog if coming from history)
   useEffect(() => {
-    const checkForExistingAttempt = async () => {
-      if (!user || !examId || hasCheckedForAttempt.current) return;
-      
-      hasCheckedForAttempt.current = true;
-      const attempt = await getInProgressAttempt(examId);
-      if (attempt) {
-        console.log("Found existing attempt:", attempt);
-        setExistingAttempt(attempt);
-        setShowResumeDialog(true);
-        setShowTimerDialog(false);
-      }
-    };
-
-    checkForExistingAttempt();
-  }, [user, examId, getInProgressAttempt]);
+    const resumeAttempt = location.state?.resumeAttempt;
+    
+    if (resumeAttempt && user) {
+      console.log("Resuming attempt from history:", resumeAttempt);
+      setExistingAttempt(resumeAttempt);
+      setShowResumeDialog(true);
+      setShowTimerDialog(false);
+    }
+  }, [location.state, user]);
 
   // Auto-save progress every 30 seconds
   const saveProgress = useCallback(async () => {
