@@ -225,6 +225,88 @@ export default function Exam() {
     setShowTimerDialog(open);
   };
 
+  // Define handleSubmitExam early with useCallback to maintain hook order
+  const handleSubmitExam = useCallback(async () => {
+    if (!exam || examBlocks.length === 0) return;
+    
+    // Record time spent on final block
+    const currentBlockId = examBlocks[currentBlockIndex].id;
+    const timeSpent = Math.floor((Date.now() - blockStartTime) / 1000);
+    const finalBlockTimeSpent = {
+      ...blockTimeSpent,
+      [currentBlockId]: (blockTimeSpent[currentBlockId] || 0) + timeSpent,
+    };
+    setBlockTimeSpent(finalBlockTimeSpent);
+    
+    // Calculate block scores
+    const blockScores = examBlocks.map((block) => {
+      let score = 0;
+
+      block.questions.forEach((question) => {
+        const userAnswer = userAnswers[question.id];
+        if (!userAnswer || userAnswer.selectedOptions.length === 0) {
+          return;
+        }
+
+        const selectedSet = new Set(userAnswer.selectedOptions);
+        const correctSet = new Set(question.correctAnswers);
+
+        const allCorrect =
+          selectedSet.size === correctSet.size &&
+          [...selectedSet].every((opt) => correctSet.has(opt));
+
+        if (allCorrect) {
+          score += 1;
+        } else {
+          score -= 1;
+        }
+      });
+
+      if (!block.canBeNegative && score < 0) {
+        score = 0;
+      }
+
+      return {
+        blockId: block.id,
+        score,
+        maxScore: 5,
+        timeSpentSeconds: finalBlockTimeSpent[block.id] || 0,
+      };
+    });
+    
+    const answersArray = Object.values(userAnswers);
+    
+    // Save completed exam attempt if user is logged in
+    if (currentAttemptId && user && courseData) {
+      const totalScore = blockScores.reduce((sum, bs) => sum + bs.score, 0);
+      const maxScore = blockScores.length * 5;
+      const percentage = (totalScore / maxScore) * 100;
+
+      await updateAttempt(currentAttemptId, {
+        user_answers: userAnswers,
+        current_block_index: currentBlockIndex,
+        remaining_seconds: remainingSeconds,
+        status: "completed",
+        block_scores: blockScores,
+        total_score: totalScore,
+        max_score: maxScore,
+        percentage: Number(percentage.toFixed(2)),
+        completed_at: new Date().toISOString(),
+      });
+    }
+
+    navigate("/results", { 
+      state: { 
+        blockScores,
+        userAnswers: answersArray,
+        examBlocks,
+        attemptId: currentAttemptId,
+        courseId: courseData?.id,
+        courseName: courseData?.name,
+      } 
+    });
+  }, [exam, examBlocks, currentBlockIndex, blockStartTime, blockTimeSpent, userAnswers, currentAttemptId, user, courseData, remainingSeconds, navigate, updateAttempt]);
+
   // Timer countdown effect
   useEffect(() => {
     if (!examStarted || remainingSeconds <= 0) return;
@@ -246,7 +328,7 @@ export default function Exam() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [examStarted, remainingSeconds]);
+  }, [examStarted, remainingSeconds, handleSubmitExam, toast]);
 
   const handleStartExam = async () => {
     const hours = parseInt(timerHours) || 0;
@@ -324,97 +406,6 @@ export default function Exam() {
     setUserAnswers({
       ...userAnswers,
       [questionId]: { questionId, selectedOptions },
-    });
-  };
-
-  const calculateAllBlockScores = (): BlockScore[] => {
-    return examBlocks.map((block) => {
-      let score = 0;
-
-      block.questions.forEach((question) => {
-        const userAnswer = userAnswers[question.id];
-        if (!userAnswer || userAnswer.selectedOptions.length === 0) {
-          // No answer: 0 points
-          return;
-        }
-
-        const selectedSet = new Set(userAnswer.selectedOptions);
-        const correctSet = new Set(question.correctAnswers);
-
-        // Check if all selected answers are correct and all correct answers are selected
-        const allCorrect =
-          selectedSet.size === correctSet.size &&
-          [...selectedSet].every((opt) => correctSet.has(opt));
-
-        if (allCorrect) {
-          score += 1; // Correct: +1
-        } else {
-          score -= 1; // Incorrect: -1
-        }
-      });
-
-      // Apply non-negative constraint for all blocks except the last one
-      if (!block.canBeNegative && score < 0) {
-        score = 0;
-      }
-
-      return {
-        blockId: block.id,
-        score,
-        maxScore: 5,
-        timeSpentSeconds: blockTimeSpent[block.id] || 0,
-      };
-    });
-  };
-
-  const handleSubmitExam = async () => {
-    // Record time spent on final block
-    const currentBlockId = examBlocks[currentBlockIndex].id;
-    const timeSpent = Math.floor((Date.now() - blockStartTime) / 1000);
-    const finalBlockTimeSpent = {
-      ...blockTimeSpent,
-      [currentBlockId]: (blockTimeSpent[currentBlockId] || 0) + timeSpent,
-    };
-    setBlockTimeSpent(finalBlockTimeSpent);
-    
-    const blockScores = calculateAllBlockScores();
-    
-    // Update block scores with final time tracking
-    const blockScoresWithTime = blockScores.map(bs => ({
-      ...bs,
-      timeSpentSeconds: finalBlockTimeSpent[bs.blockId] || 0,
-    }));
-    
-    const answersArray = Object.values(userAnswers);
-    
-    // Save completed exam attempt if user is logged in
-    if (currentAttemptId && user) {
-      const totalScore = blockScoresWithTime.reduce((sum, bs) => sum + bs.score, 0);
-      const maxScore = blockScoresWithTime.length * 5;
-      const percentage = (totalScore / maxScore) * 100;
-
-      await updateAttempt(currentAttemptId, {
-        user_answers: userAnswers,
-        current_block_index: currentBlockIndex,
-        remaining_seconds: remainingSeconds,
-        status: "completed",
-        block_scores: blockScoresWithTime,
-        total_score: totalScore,
-        max_score: maxScore,
-        percentage: Number(percentage.toFixed(2)),
-        completed_at: new Date().toISOString(),
-      });
-    }
-
-    navigate("/results", { 
-      state: { 
-        blockScores: blockScoresWithTime,
-        userAnswers: answersArray,
-        examBlocks,
-        attemptId: currentAttemptId,
-        courseId: courseData.id,
-        courseName: courseData.name,
-      } 
     });
   };
 
