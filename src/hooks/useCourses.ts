@@ -8,6 +8,11 @@ export function useCourses() {
   const { userCourses, loading: coursesLoading } = useUserCourses();
 
   const allCourses = useMemo(() => {
+    console.log('useCourses recalculating with:', { 
+      userCoursesCount: userCourses.length, 
+      userExamsCount: userExams.length 
+    });
+    
     // Start with hardcoded courses
     const coursesMap = new Map<string, Course>();
     
