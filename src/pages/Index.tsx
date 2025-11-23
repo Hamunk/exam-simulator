@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Brain, Search, BookOpen, Plus } from "lucide-react";
+import { Brain, Search, BookOpen, Plus, Bookmark, Award, Target } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { useCourses } from "@/hooks/useCourses";
+import { useCourseSubscriptions } from "@/hooks/useCourseSubscriptions";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { courses, loading, createUserCourse } = useCourses();
+  const { isSubscribed, subscribeToCourse, unsubscribeFromCourse, getCourseStats } = useCourseSubscriptions();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
   const [newCourseName, setNewCourseName] = useState("");
@@ -32,6 +34,9 @@ const Index = () => {
       course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const myCourses = user ? filteredCourses.filter(course => isSubscribed(course.code)) : [];
+  const availableCourses = filteredCourses.filter(course => !isSubscribed(course.code));
 
   const handleAddCourse = async () => {
     if (!newCourseCode.trim() || !newCourseName.trim()) {
@@ -97,7 +102,72 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Courses Grid */}
+          {/* My Courses Section */}
+          {user && myCourses.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-semibold text-foreground mb-6">
+                My Courses
+              </h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                {myCourses.map((course) => {
+                  const stats = getCourseStats(course.code);
+                  return (
+                    <Card
+                      key={course.id}
+                      className="p-6 hover:shadow-elevated transition-all cursor-pointer group relative"
+                      onClick={() => navigate(`/course/${course.id}`)}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-4 right-4 opacity-60 hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          unsubscribeFromCourse(course.code);
+                        }}
+                      >
+                        <Bookmark className="w-4 h-4 fill-current" />
+                      </Button>
+                      <div className="space-y-4">
+                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                          <BookOpen className="w-6 h-6 text-primary" />
+                        </div>
+                        <div>
+                          <div className="inline-block px-2 py-1 bg-accent/10 text-accent rounded text-xs font-semibold mb-2">
+                            {course.code}
+                          </div>
+                          <h3 className="text-lg font-semibold text-foreground mb-1">
+                            {course.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            {course.exams.length} exam{course.exams.length !== 1 ? "s" : ""} available
+                          </p>
+                          <div className="flex items-center gap-4 pt-3 border-t border-border">
+                            <div className="flex items-center gap-1.5">
+                              <Target className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">
+                                {stats.uniqueExamsAttempted} attempted
+                              </span>
+                            </div>
+                            {stats.averageBestScore > 0 && (
+                              <div className="flex items-center gap-1.5">
+                                <Award className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">
+                                  {stats.averageBestScore}% avg
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Available Courses Grid */}
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold text-foreground">
@@ -151,12 +221,25 @@ const Index = () => {
               )}
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map((course) => (
+              {availableCourses.map((course) => (
                 <Card
                   key={course.id}
-                  className="p-6 hover:shadow-elevated transition-all cursor-pointer group"
+                  className="p-6 hover:shadow-elevated transition-all cursor-pointer group relative"
                   onClick={() => navigate(`/course/${course.id}`)}
                 >
+                  {user && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-4 right-4 opacity-0 group-hover:opacity-60 hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        subscribeToCourse(course.code);
+                      }}
+                    >
+                      <Bookmark className="w-4 h-4" />
+                    </Button>
+                  )}
                   <div className="space-y-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                       <BookOpen className="w-6 h-6 text-primary" />
@@ -177,7 +260,7 @@ const Index = () => {
               ))}
             </div>
 
-            {filteredCourses.length === 0 && (
+            {availableCourses.length === 0 && myCourses.length === 0 && (
               <Card className="p-12 text-center">
                 <p className="text-muted-foreground">
                   No courses found matching "{searchQuery}"
