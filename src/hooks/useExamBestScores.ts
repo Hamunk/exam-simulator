@@ -29,8 +29,8 @@ export function useExamBestScores(courseCode: string) {
         // Group by exam_id and get best score for each
         const scores: Record<string, number> = {};
         data?.forEach((attempt) => {
-          const currentBest = scores[attempt.exam_id] || 0;
-          if (attempt.percentage > currentBest) {
+          const currentBest = scores[attempt.exam_id];
+          if (currentBest === undefined || attempt.percentage > currentBest) {
             scores[attempt.exam_id] = Math.round(attempt.percentage);
           }
         });
@@ -49,7 +49,7 @@ export function useExamBestScores(courseCode: string) {
   }, [courseCode]);
 
   const getBestScore = (examId: string): number | null => {
-    return bestScores[examId] || null;
+    return examId in bestScores ? bestScores[examId] : null;
   };
 
   return {
