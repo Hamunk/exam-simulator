@@ -98,5 +98,6 @@ export function useCourses() {
     getCourseById,
     getCourseByCourseCode,
     getExamById,
+    createUserCourse: useUserCourses().createUserCourse,
   };
 }
