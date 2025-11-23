@@ -76,6 +76,10 @@ export default function Exam() {
   
   // Auto-save reference
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Refs for timer stability
+  const remainingSecondsRef = useRef(remainingSeconds);
+  const handleSubmitExamRef = useRef<(() => void) | null>(null);
 
   // Find the exam and its course
   const examData = getExamById(examId || "");
@@ -94,6 +98,11 @@ export default function Exam() {
     }
   }, [location.state, user]);
 
+  // Keep remainingSeconds ref up to date
+  useEffect(() => {
+    remainingSecondsRef.current = remainingSeconds;
+  }, [remainingSeconds]);
+
   // Auto-save progress every 30 seconds
   const saveProgress = useCallback(async () => {
     if (!currentAttemptId || !examStarted || isSaving) return;
@@ -103,14 +112,14 @@ export default function Exam() {
       await updateAttempt(currentAttemptId, {
         user_answers: userAnswers,
         current_block_index: currentBlockIndex,
-        remaining_seconds: remainingSeconds,
+        remaining_seconds: remainingSecondsRef.current,
       });
     } catch (error) {
       console.error("Failed to save progress:", error);
     } finally {
       setIsSaving(false);
     }
-  }, [currentAttemptId, userAnswers, currentBlockIndex, remainingSeconds, examStarted, isSaving]);
+  }, [currentAttemptId, userAnswers, currentBlockIndex, examStarted, isSaving, updateAttempt]);
 
   useEffect(() => {
     if (!examStarted || !currentAttemptId) return;
@@ -221,9 +230,14 @@ export default function Exam() {
     });
   }, [exam, examBlocks, currentBlockIndex, blockStartTime, blockTimeSpent, userAnswers, currentAttemptId, user, courseData, remainingSeconds, navigate, updateAttempt]);
 
+  // Keep handleSubmitExam ref up to date
+  useEffect(() => {
+    handleSubmitExamRef.current = handleSubmitExam;
+  }, [handleSubmitExam]);
+
   // Timer countdown effect - must be before early returns
   useEffect(() => {
-    if (!examStarted || remainingSeconds <= 0) return;
+    if (!examStarted) return;
 
     const interval = setInterval(() => {
       setRemainingSeconds((prev) => {
@@ -234,7 +248,7 @@ export default function Exam() {
             description: "Your exam time has expired. Submitting your answers now.",
             variant: "destructive",
           });
-          setTimeout(() => handleSubmitExam(), 2000);
+          setTimeout(() => handleSubmitExamRef.current?.(), 2000);
           return 0;
         }
         return prev - 1;
@@ -242,7 +256,7 @@ export default function Exam() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [examStarted, remainingSeconds, handleSubmitExam, toast]);
+  }, [examStarted, toast]);
 
   // Early return after all hooks have been called
   if (coursesLoading) {
