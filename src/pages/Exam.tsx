@@ -134,10 +134,115 @@ export default function Exam() {
     };
   }, [examStarted, currentAttemptId, saveProgress]);
 
-  // Define these before early returns to keep hooks order consistent
+  // Define examBlocks before using it in callbacks
   const examBlocks = exam?.blocks || [];
   const currentBlock = examBlocks[currentBlockIndex];
   const isLastBlock = currentBlockIndex === examBlocks.length - 1;
+
+  // Define handleSubmitExam before early returns to maintain hook order
+  const handleSubmitExam = useCallback(async () => {
+    if (!exam || examBlocks.length === 0) return;
+    
+    // Record time spent on final block
+    const currentBlockId = examBlocks[currentBlockIndex].id;
+    const timeSpent = Math.floor((Date.now() - blockStartTime) / 1000);
+    const finalBlockTimeSpent = {
+      ...blockTimeSpent,
+      [currentBlockId]: (blockTimeSpent[currentBlockId] || 0) + timeSpent,
+    };
+    setBlockTimeSpent(finalBlockTimeSpent);
+    
+    // Calculate block scores
+    const blockScores = examBlocks.map((block) => {
+      let score = 0;
+
+      block.questions.forEach((question) => {
+        const userAnswer = userAnswers[question.id];
+        if (!userAnswer || userAnswer.selectedOptions.length === 0) {
+          return;
+        }
+
+        const selectedSet = new Set(userAnswer.selectedOptions);
+        const correctSet = new Set(question.correctAnswers);
+
+        const allCorrect =
+          selectedSet.size === correctSet.size &&
+          [...selectedSet].every((opt) => correctSet.has(opt));
+
+        if (allCorrect) {
+          score += 1;
+        } else {
+          score -= 1;
+        }
+      });
+
+      if (!block.canBeNegative && score < 0) {
+        score = 0;
+      }
+
+      return {
+        blockId: block.id,
+        score,
+        maxScore: 5,
+        timeSpentSeconds: finalBlockTimeSpent[block.id] || 0,
+      };
+    });
+    
+    const answersArray = Object.values(userAnswers);
+    
+    // Save completed exam attempt if user is logged in
+    if (currentAttemptId && user && courseData) {
+      const totalScore = blockScores.reduce((sum, bs) => sum + bs.score, 0);
+      const maxScore = blockScores.length * 5;
+      const percentage = (totalScore / maxScore) * 100;
+
+      await updateAttempt(currentAttemptId, {
+        user_answers: userAnswers,
+        current_block_index: currentBlockIndex,
+        remaining_seconds: remainingSeconds,
+        status: "completed",
+        block_scores: blockScores,
+        total_score: totalScore,
+        max_score: maxScore,
+        percentage: Number(percentage.toFixed(2)),
+        completed_at: new Date().toISOString(),
+      });
+    }
+
+    navigate("/results", { 
+      state: { 
+        blockScores,
+        userAnswers: answersArray,
+        examBlocks,
+        attemptId: currentAttemptId,
+        courseId: courseData?.id,
+        courseName: courseData?.name,
+      } 
+    });
+  }, [exam, examBlocks, currentBlockIndex, blockStartTime, blockTimeSpent, userAnswers, currentAttemptId, user, courseData, remainingSeconds, navigate, updateAttempt]);
+
+  // Timer countdown effect - must be before early returns
+  useEffect(() => {
+    if (!examStarted || remainingSeconds <= 0) return;
+
+    const interval = setInterval(() => {
+      setRemainingSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          toast({
+            title: "Time's up!",
+            description: "Your exam time has expired. Submitting your answers now.",
+            variant: "destructive",
+          });
+          setTimeout(() => handleSubmitExam(), 2000);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [examStarted, remainingSeconds, handleSubmitExam, toast]);
 
   // Early return after all hooks have been called
   if (coursesLoading) {
@@ -224,111 +329,6 @@ export default function Exam() {
     }
     setShowTimerDialog(open);
   };
-
-  // Define handleSubmitExam early with useCallback to maintain hook order
-  const handleSubmitExam = useCallback(async () => {
-    if (!exam || examBlocks.length === 0) return;
-    
-    // Record time spent on final block
-    const currentBlockId = examBlocks[currentBlockIndex].id;
-    const timeSpent = Math.floor((Date.now() - blockStartTime) / 1000);
-    const finalBlockTimeSpent = {
-      ...blockTimeSpent,
-      [currentBlockId]: (blockTimeSpent[currentBlockId] || 0) + timeSpent,
-    };
-    setBlockTimeSpent(finalBlockTimeSpent);
-    
-    // Calculate block scores
-    const blockScores = examBlocks.map((block) => {
-      let score = 0;
-
-      block.questions.forEach((question) => {
-        const userAnswer = userAnswers[question.id];
-        if (!userAnswer || userAnswer.selectedOptions.length === 0) {
-          return;
-        }
-
-        const selectedSet = new Set(userAnswer.selectedOptions);
-        const correctSet = new Set(question.correctAnswers);
-
-        const allCorrect =
-          selectedSet.size === correctSet.size &&
-          [...selectedSet].every((opt) => correctSet.has(opt));
-
-        if (allCorrect) {
-          score += 1;
-        } else {
-          score -= 1;
-        }
-      });
-
-      if (!block.canBeNegative && score < 0) {
-        score = 0;
-      }
-
-      return {
-        blockId: block.id,
-        score,
-        maxScore: 5,
-        timeSpentSeconds: finalBlockTimeSpent[block.id] || 0,
-      };
-    });
-    
-    const answersArray = Object.values(userAnswers);
-    
-    // Save completed exam attempt if user is logged in
-    if (currentAttemptId && user && courseData) {
-      const totalScore = blockScores.reduce((sum, bs) => sum + bs.score, 0);
-      const maxScore = blockScores.length * 5;
-      const percentage = (totalScore / maxScore) * 100;
-
-      await updateAttempt(currentAttemptId, {
-        user_answers: userAnswers,
-        current_block_index: currentBlockIndex,
-        remaining_seconds: remainingSeconds,
-        status: "completed",
-        block_scores: blockScores,
-        total_score: totalScore,
-        max_score: maxScore,
-        percentage: Number(percentage.toFixed(2)),
-        completed_at: new Date().toISOString(),
-      });
-    }
-
-    navigate("/results", { 
-      state: { 
-        blockScores,
-        userAnswers: answersArray,
-        examBlocks,
-        attemptId: currentAttemptId,
-        courseId: courseData?.id,
-        courseName: courseData?.name,
-      } 
-    });
-  }, [exam, examBlocks, currentBlockIndex, blockStartTime, blockTimeSpent, userAnswers, currentAttemptId, user, courseData, remainingSeconds, navigate, updateAttempt]);
-
-  // Timer countdown effect
-  useEffect(() => {
-    if (!examStarted || remainingSeconds <= 0) return;
-
-    const interval = setInterval(() => {
-      setRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          toast({
-            title: "Time's up!",
-            description: "Your exam time has expired. Submitting your answers now.",
-            variant: "destructive",
-          });
-          setTimeout(() => handleSubmitExam(), 2000);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [examStarted, remainingSeconds, handleSubmitExam, toast]);
 
   const handleStartExam = async () => {
     const hours = parseInt(timerHours) || 0;
