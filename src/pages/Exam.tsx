@@ -70,6 +70,7 @@ export default function Exam() {
   
   // Cancel dialog
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelDestination, setCancelDestination] = useState<string>("/");
   const [isSaving, setIsSaving] = useState(false);
   
   // Auto-save reference
@@ -297,7 +298,15 @@ export default function Exam() {
     }
 
     setShowCancelDialog(false);
-    navigate("/");
+    navigate(cancelDestination);
+  };
+
+  const handleBreadcrumbClick = (e: React.MouseEvent, destination: string) => {
+    if (examStarted) {
+      e.preventDefault();
+      setCancelDestination(destination);
+      setShowCancelDialog(true);
+    }
   };
 
   const handleAnswerChange = (questionId: string, selectedOptions: number[]) => {
@@ -576,13 +585,15 @@ export default function Exam() {
               <BreadcrumbList>
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link to="/">Home</Link>
+                    <Link to="/" onClick={(e) => handleBreadcrumbClick(e, "/")}>Home</Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link to={`/course/${courseData.id}`}>{courseData.name}</Link>
+                    <Link to={`/course/${courseData.id}`} onClick={(e) => handleBreadcrumbClick(e, `/course/${courseData.id}`)}>
+                      {courseData.name}
+                    </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
