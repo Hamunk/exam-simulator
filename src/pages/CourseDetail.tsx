@@ -1,11 +1,12 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Calendar, FileText, Plus, CheckCircle2 } from "lucide-react";
+import { Calendar, FileText, Plus, CheckCircle2, Trophy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { useCourses } from "@/hooks/useCourses";
 import { useExamAttemptStatus } from "@/hooks/useExamAttemptStatus";
+import { useExamBestScores } from "@/hooks/useExamBestScores";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -25,6 +26,7 @@ const CourseDetail = () => {
   
   const course = getCourseById(courseId || "");
   const { hasAttempted, loading: attemptsLoading } = useExamAttemptStatus(course?.code || "");
+  const { getBestScore, loading: scoresLoading } = useExamBestScores(course?.code || "");
 
   if (loading) {
     return (
@@ -96,26 +98,29 @@ const CourseDetail = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {course.exams.map((exam) => {
               const attempted = user ? hasAttempted(exam.id) : false;
+              const bestScore = user ? getBestScore(exam.id) : null;
               return (
                 <Card
                   key={exam.id}
                   className="p-6 hover:shadow-elevated transition-all cursor-pointer group relative"
                   onClick={() => navigate(`/exam/${exam.id}`)}
                 >
-                  {user && attempted && (
-                    <Badge variant="secondary" className="absolute top-4 right-4 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Attempted
-                    </Badge>
-                  )}
                   <div className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                         <FileText className="w-6 h-6 text-primary" />
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="w-4 h-4" />
-                        <span>{exam.year}</span>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          <span>{exam.year}</span>
+                        </div>
+                        {user && attempted && (
+                          <Badge variant="secondary" className="flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Attempted
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     
@@ -123,9 +128,17 @@ const CourseDetail = () => {
                       <h3 className="text-xl font-semibold text-foreground mb-1">
                         {exam.title}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground mb-2">
                         {exam.blocks.length} blocks · {exam.blocks.reduce((acc, block) => acc + block.questions.length, 0)} questions
                       </p>
+                      {bestScore !== null && (
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <Trophy className="w-4 h-4 text-amber-500" />
+                          <span className="font-semibold text-foreground">
+                            Best: {bestScore}%
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                   <Button
