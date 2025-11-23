@@ -347,7 +347,9 @@ export default function Exam() {
         blockScores,
         userAnswers: answersArray,
         examBlocks,
-        attemptId: currentAttemptId
+        attemptId: currentAttemptId,
+        courseId: courseData.id,
+        courseName: courseData.name,
       } 
     });
   };
