@@ -8,6 +8,15 @@ import { Card } from "@/components/ui/card";
 import { Home, ArrowLeft, Clock } from "lucide-react";
 import { useState } from "react";
 import { Header } from "@/components/Header";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
+import { Link } from "react-router-dom";
 
 export default function Results() {
   const location = useLocation();
@@ -56,6 +65,47 @@ export default function Results() {
       <Header />
       <div className="py-8 px-4">
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Breadcrumb */}
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/">Home</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              {fromHistory ? (
+                <>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link to="/history">History</Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Results</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </>
+              ) : courseId ? (
+                <>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link to={`/course/${courseId}`}>{courseName || "Course"}</Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Results</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </>
+              ) : (
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Results</BreadcrumbPage>
+                </BreadcrumbItem>
+              )}
+            </BreadcrumbList>
+          </Breadcrumb>
+
           {/* Back Button */}
           {fromHistory ? (
             <Button

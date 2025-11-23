@@ -27,10 +27,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
 import { ChevronRight, ChevronLeft, Home, Clock, Save, PlayCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useExamAttempts } from "@/hooks/useExamAttempts";
+import { Link } from "react-router-dom";
 
 export default function Exam() {
   const navigate = useNavigate();
@@ -561,6 +570,29 @@ export default function Exam() {
       {/* Exam Content */}
       <div className="min-h-screen bg-background py-8 px-4">
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Breadcrumb */}
+          {examStarted && (
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to="/">Home</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to={`/course/${courseData.id}`}>{courseData.name}</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{exam.title}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          )}
+
           {/* Header with Timer and Cancel */}
           <div className="flex items-center justify-between gap-4">
             <ProgressBar current={currentBlockIndex + 1} total={examBlocks.length} />
