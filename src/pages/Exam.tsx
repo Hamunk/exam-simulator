@@ -134,6 +134,11 @@ export default function Exam() {
     };
   }, [examStarted, currentAttemptId, saveProgress]);
 
+  // Define these before early returns to keep hooks order consistent
+  const examBlocks = exam?.blocks || [];
+  const currentBlock = examBlocks[currentBlockIndex];
+  const isLastBlock = currentBlockIndex === examBlocks.length - 1;
+
   // Early return after all hooks have been called
   if (coursesLoading) {
     return (
@@ -155,10 +160,6 @@ export default function Exam() {
       </div>
     );
   }
-
-  const examBlocks = exam.blocks;
-  const currentBlock = examBlocks[currentBlockIndex];
-  const isLastBlock = currentBlockIndex === examBlocks.length - 1;
 
   const handleResumeExam = async () => {
     if (!existingAttempt) return;
