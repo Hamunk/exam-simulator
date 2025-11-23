@@ -81,7 +81,9 @@ export function useExamAttempts() {
         .from("exam_attempts")
         .select("*")
         .eq("exam_id", examId)
-        .eq("status", "in_progress")
+        .in("status", ["in_progress", "abandoned"])
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;

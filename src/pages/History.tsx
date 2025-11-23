@@ -107,6 +107,10 @@ export default function History() {
   const handleResumeExam = (attemptId: string, examId: string) => {
     // Navigate to the exam page - the exam component will detect the in-progress attempt
     navigate(`/exam/${examId}`);
+    toast({
+      title: "Resuming exam",
+      description: "Loading your saved progress...",
+    });
   };
 
   const handleDeleteAttempt = async (attemptId: string) => {
@@ -266,7 +270,7 @@ export default function History() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {attempt.status === "in_progress" && (
+                      {(attempt.status === "in_progress" || attempt.status === "abandoned") && (
                         <Button
                           size="sm"
                           onClick={() => handleResumeExam(attempt.id, attempt.exam_id)}
