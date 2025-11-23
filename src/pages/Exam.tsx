@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronRight, ChevronLeft, Home, Clock, Save } from "lucide-react";
+import { ChevronRight, ChevronLeft, Home, Clock, Save, PlayCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useExamAttempts } from "@/hooks/useExamAttempts";
@@ -43,7 +43,8 @@ export default function Exam() {
   const [userAnswers, setUserAnswers] = useState<Record<string, UserAnswer>>({});
   const [currentAttemptId, setCurrentAttemptId] = useState<string | null>(null);
   const [showResumeDialog, setShowResumeDialog] = useState(false);
-  const [hasInProgressAttempt, setHasInProgressAttempt] = useState(false);
+  const [existingAttempt, setExistingAttempt] = useState<any>(null);
+  const [additionalMinutes, setAdditionalMinutes] = useState("0");
   
   // Timer states
   const [showTimerDialog, setShowTimerDialog] = useState(true);
@@ -87,16 +88,17 @@ export default function Exam() {
     const checkForExistingAttempt = async () => {
       if (!user || !examId) return;
       
-      const existingAttempt = await getInProgressAttempt(examId);
-      if (existingAttempt) {
-        setHasInProgressAttempt(true);
+      const attempt = await getInProgressAttempt(examId);
+      if (attempt) {
+        console.log("Found existing attempt:", attempt);
+        setExistingAttempt(attempt);
         setShowResumeDialog(true);
         setShowTimerDialog(false);
       }
     };
 
     checkForExistingAttempt();
-  }, [user, examId]);
+  }, [user, examId, getInProgressAttempt]);
 
   // Auto-save progress every 30 seconds
   const saveProgress = useCallback(async () => {
@@ -139,25 +141,43 @@ export default function Exam() {
   }, [examStarted, currentAttemptId, saveProgress]);
 
   const handleResumeExam = async () => {
-    const existingAttempt = await getInProgressAttempt(examId!);
-    if (existingAttempt) {
-      setCurrentAttemptId(existingAttempt.id);
-      setUserAnswers(existingAttempt.user_answers);
-      setCurrentBlockIndex(existingAttempt.current_block_index);
-      setTotalSeconds(existingAttempt.total_seconds);
-      setRemainingSeconds(existingAttempt.remaining_seconds);
-      setExamStarted(true);
-      setShowResumeDialog(false);
-      
-      toast({
-        title: "Exam resumed",
-        description: "Continuing from where you left off.",
+    if (!existingAttempt) return;
+
+    const additionalTime = parseInt(additionalMinutes) || 0;
+    const newRemainingSeconds = existingAttempt.remaining_seconds + (additionalTime * 60);
+
+    setCurrentAttemptId(existingAttempt.id);
+    setUserAnswers(existingAttempt.user_answers);
+    setCurrentBlockIndex(existingAttempt.current_block_index);
+    setTotalSeconds(existingAttempt.total_seconds + (additionalTime * 60));
+    setRemainingSeconds(newRemainingSeconds);
+    setExamStarted(true);
+    setShowResumeDialog(false);
+    
+    // Update the attempt with new remaining time if added
+    if (additionalTime > 0) {
+      await updateAttempt(existingAttempt.id, {
+        remaining_seconds: newRemainingSeconds,
       });
     }
+
+    toast({
+      title: "Exam resumed",
+      description: additionalTime > 0 
+        ? `Continuing with ${additionalTime} extra minutes added.`
+        : "Continuing from where you left off.",
+    });
   };
 
-  const handleStartFreshExam = () => {
-    setHasInProgressAttempt(false);
+  const handleStartFreshExam = async () => {
+    // If there's an existing attempt, mark it as abandoned before starting fresh
+    if (existingAttempt) {
+      await updateAttempt(existingAttempt.id, {
+        status: "abandoned",
+      });
+    }
+    
+    setExistingAttempt(null);
     setShowResumeDialog(false);
     setShowTimerDialog(true);
   };
@@ -395,24 +415,77 @@ export default function Exam() {
       </Dialog>
 
       {/* Resume Exam Dialog */}
-      <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Resume Exam?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have an unfinished exam attempt. Would you like to continue where you left off or start a fresh exam?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleStartFreshExam}>
-              Start Fresh
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleResumeExam}>
+      <Dialog open={showResumeDialog} onOpenChange={(open) => {
+        if (!open && existingAttempt) {
+          // If closing without action, go back
+          navigate(`/course/${courseData.id}`);
+        }
+        setShowResumeDialog(open);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PlayCircle className="w-5 h-5" />
               Resume Exam
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </DialogTitle>
+            <DialogDescription>
+              You have an unfinished exam attempt with time remaining.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {existingAttempt && (
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Progress:</span>
+                  <span className="font-semibold">
+                    Block {existingAttempt.current_block_index + 1} of {examBlocks.length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Questions answered:</span>
+                  <span className="font-semibold">
+                    {Object.keys(existingAttempt.user_answers).length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Time remaining:</span>
+                  <span className="font-semibold text-primary">
+                    {Math.floor(existingAttempt.remaining_seconds / 3600)}h{" "}
+                    {Math.floor((existingAttempt.remaining_seconds % 3600) / 60)}m
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="additional-time">Add extra time (minutes, optional)</Label>
+                <Input
+                  id="additional-time"
+                  type="number"
+                  min="0"
+                  max="180"
+                  value={additionalMinutes}
+                  onChange={(e) => setAdditionalMinutes(e.target.value)}
+                  placeholder="0"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Add more time if needed, or leave at 0 to continue with current time.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={handleStartFreshExam} className="w-full sm:w-auto">
+              Start Fresh
+            </Button>
+            <Button onClick={handleResumeExam} className="w-full sm:w-auto">
+              <PlayCircle className="w-4 h-4 mr-2" />
+              Resume Exam
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Cancel Confirmation Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
