@@ -57,13 +57,11 @@ export function useUserCourses() {
 
       if (error) throw error;
       
-      // Immediately update local state for instant UI feedback
+      // Optimistically add the new course to the list without refetching
       if (data) {
         setUserCourses(prev => [data, ...prev]);
       }
       
-      // Also refresh from database to ensure consistency
-      await fetchUserCourses();
       return data;
     } catch (error: any) {
       console.error("Error creating course:", error);
