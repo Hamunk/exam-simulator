@@ -313,33 +313,4 @@ const mathCodeExamBlocks: ExamBlock[] = [
   },
 ];
 
-export const courses: Course[] = [
-  {
-    id: "tdt4172",
-    code: "TDT4172",
-    name: "Introduction to Machine Learning",
-    exams: [
-      {
-        id: "tdt4172-2024-spring",
-        title: "Spring 2024",
-        year: "2024",
-        semester: "Spring",
-        blocks: sampleExamBlocks,
-      },
-      {
-        id: "tdt4172-2023-fall",
-        title: "Fall 2023",
-        year: "2023",
-        semester: "Fall",
-        blocks: sampleExamBlocks,
-      },
-      {
-        id: "tdt4172-2024-sample",
-        title: "Sample Exam (Math & Code)",
-        year: "2024",
-        semester: "Sample",
-        blocks: mathCodeExamBlocks,
-      },
-    ],
-  },
-];
+export const courses: Course[] = [];
