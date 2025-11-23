@@ -18,8 +18,9 @@ import { useCourses } from "@/hooks/useCourses";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { ExamBlock, Question } from "@/types/exam";
-import { validateExamJson } from "@/lib/examJsonValidator";
+import { validateExamJson, ExamJson } from "@/lib/examJsonValidator";
 import { ExamJsonGuide } from "@/components/exam/ExamJsonGuide";
+import { ExamJsonPreview } from "@/components/exam/ExamJsonPreview";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -84,6 +85,7 @@ const CreateExam = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showJsonUpload, setShowJsonUpload] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [previewData, setPreviewData] = useState<ExamJson | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Pre-fill course info from navigation state
@@ -289,37 +291,58 @@ const CreateExam = () => {
         return;
       }
 
-      // Get course name
+      // Show preview instead of directly submitting
+      setPreviewData(examData);
+      setShowJsonUpload(false);
+    } catch (error: any) {
+      console.error("Error validating exam:", error);
+      if (error instanceof SyntaxError) {
+        toast.error("Invalid JSON format. Please check your file.");
+      } else {
+        toast.error(error.message || "Failed to validate exam");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!previewData || !user) return;
+
+    setIsSubmitting(true);
+    try {
       const course = courses.find(
-        (c) => c.code.toLowerCase() === examData.courseCode.toLowerCase()
+        (c) => c.code.toLowerCase() === previewData.courseCode.toLowerCase()
       );
 
       // Insert into database
       const { error } = await supabase.from("user_exams").insert([{
         user_id: user.id,
-        course_code: examData.courseCode,
-        course_name: course?.name || examData.courseCode,
-        exam_title: examData.examTitle,
-        exam_year: examData.examYear,
-        exam_semester: examData.examSemester,
-        blocks: examData.blocks as any,
-        is_public: examData.isPublic,
+        course_code: previewData.courseCode,
+        course_name: course?.name || previewData.courseCode,
+        exam_title: previewData.examTitle,
+        exam_year: previewData.examYear,
+        exam_semester: previewData.examSemester,
+        blocks: previewData.blocks as any,
+        is_public: previewData.isPublic,
       }]);
 
       if (error) throw error;
 
       toast.success("Exam imported successfully!");
-      navigate(`/course/user-${examData.courseCode.toLowerCase().replace(/\s+/g, "-")}`);
+      navigate(`/course/user-${previewData.courseCode.toLowerCase().replace(/\s+/g, "-")}`);
     } catch (error: any) {
       console.error("Error importing exam:", error);
-      if (error instanceof SyntaxError) {
-        toast.error("Invalid JSON format. Please check your file.");
-      } else {
-        toast.error(error.message || "Failed to import exam");
-      }
+      toast.error(error.message || "Failed to import exam");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCancelPreview = () => {
+    setPreviewData(null);
+    setUploadedFile(null);
+    setShowJsonUpload(true);
   };
 
   const handleSubmitExam = async () => {
@@ -673,18 +696,29 @@ def fibonacci(n):
                         >
                           Remove
                         </Button>
-                        <Button
-                          type="button"
-                          onClick={handleJsonImport}
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? "Importing..." : "Import Exam"}
-                        </Button>
+                         <Button
+                           type="button"
+                           onClick={handleJsonImport}
+                           disabled={isSubmitting}
+                         >
+                           {isSubmitting ? "Validating..." : "Validate & Preview"}
+                         </Button>
                       </div>
                     </>
                   )}
                 </div>
               </div>
+            </Card>
+          )}
+
+          {/* JSON Preview Step */}
+          {previewData && (
+            <Card className="p-8">
+              <ExamJsonPreview
+                examData={previewData}
+                onConfirm={handleConfirmImport}
+                onCancel={handleCancelPreview}
+              />
             </Card>
           )}
 

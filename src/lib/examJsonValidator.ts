@@ -58,6 +58,8 @@ export const examJsonSchema = z.object({
 );
 
 export type ExamJson = z.infer<typeof examJsonSchema>;
+export type ExamBlock = z.infer<typeof blockSchema>;
+export type ExamQuestion = z.infer<typeof questionSchema>;
 
 export function validateExamJson(json: any): { success: true; data: ExamJson } | { success: false; errors: string[] } {
   const result = examJsonSchema.safeParse(json);
