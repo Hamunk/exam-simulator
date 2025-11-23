@@ -5,7 +5,7 @@ import { useUserCourses } from "./useUserCourses";
 
 export function useCourses() {
   const { userExams, loading: examsLoading } = useUserExams();
-  const { userCourses, loading: coursesLoading } = useUserCourses();
+  const { userCourses, loading: coursesLoading, createUserCourse } = useUserCourses();
 
   const allCourses = useMemo(() => {
     console.log('useCourses recalculating with:', { 
@@ -98,6 +98,6 @@ export function useCourses() {
     getCourseById,
     getCourseByCourseCode,
     getExamById,
-    createUserCourse: useUserCourses().createUserCourse,
+    createUserCourse,
   };
 }
