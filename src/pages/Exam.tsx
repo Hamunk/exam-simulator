@@ -83,10 +83,10 @@ export default function Exam() {
   const currentBlock = examBlocks[currentBlockIndex];
   const isLastBlock = currentBlockIndex === examBlocks.length - 1;
 
-  // Check for existing in-progress attempt
+  // Check for existing in-progress attempt (only before exam starts)
   useEffect(() => {
     const checkForExistingAttempt = async () => {
-      if (!user || !examId) return;
+      if (!user || !examId || examStarted) return;
       
       const attempt = await getInProgressAttempt(examId);
       if (attempt) {
@@ -98,7 +98,7 @@ export default function Exam() {
     };
 
     checkForExistingAttempt();
-  }, [user, examId, getInProgressAttempt]);
+  }, [user, examId, examStarted, getInProgressAttempt]);
 
   // Auto-save progress every 30 seconds
   const saveProgress = useCallback(async () => {
