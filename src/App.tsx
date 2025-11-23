@@ -8,6 +8,7 @@ import CourseDetail from "./pages/CourseDetail";
 import Exam from "./pages/Exam";
 import Results from "./pages/Results";
 import Auth from "./pages/Auth";
+import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/history" element={<History />} />
           <Route path="/course/:courseId" element={<CourseDetail />} />
           <Route path="/exam/:examId" element={<Exam />} />
           <Route path="/results" element={<Results />} />

@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      exam_attempts: {
+        Row: {
+          block_scores: Json | null
+          completed_at: string | null
+          course_code: string
+          course_name: string
+          created_at: string
+          current_block_index: number
+          exam_data: Json
+          exam_id: string
+          exam_title: string
+          id: string
+          max_score: number | null
+          percentage: number | null
+          remaining_seconds: number
+          started_at: string
+          status: string
+          total_score: number | null
+          total_seconds: number
+          updated_at: string
+          user_answers: Json
+          user_id: string
+        }
+        Insert: {
+          block_scores?: Json | null
+          completed_at?: string | null
+          course_code: string
+          course_name: string
+          created_at?: string
+          current_block_index?: number
+          exam_data: Json
+          exam_id: string
+          exam_title: string
+          id?: string
+          max_score?: number | null
+          percentage?: number | null
+          remaining_seconds: number
+          started_at?: string
+          status?: string
+          total_score?: number | null
+          total_seconds: number
+          updated_at?: string
+          user_answers?: Json
+          user_id: string
+        }
+        Update: {
+          block_scores?: Json | null
+          completed_at?: string | null
+          course_code?: string
+          course_name?: string
+          created_at?: string
+          current_block_index?: number
+          exam_data?: Json
+          exam_id?: string
+          exam_title?: string
+          id?: string
+          max_score?: number | null
+          percentage?: number | null
+          remaining_seconds?: number
+          started_at?: string
+          status?: string
+          total_score?: number | null
+          total_seconds?: number
+          updated_at?: string
+          user_answers?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

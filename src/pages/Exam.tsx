@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { courses } from "@/data/coursesData";
 import { UserAnswer, BlockScore } from "@/types/exam";
@@ -27,16 +27,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronRight, ChevronLeft, Home, Clock } from "lucide-react";
+import { ChevronRight, ChevronLeft, Home, Clock, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useExamAttempts } from "@/hooks/useExamAttempts";
 
 export default function Exam() {
   const navigate = useNavigate();
   const { examId } = useParams();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { createAttempt, updateAttempt, getInProgressAttempt } = useExamAttempts();
   
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, UserAnswer>>({});
+  const [currentAttemptId, setCurrentAttemptId] = useState<string | null>(null);
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+  const [hasInProgressAttempt, setHasInProgressAttempt] = useState(false);
   
   // Timer states
   const [showTimerDialog, setShowTimerDialog] = useState(true);
@@ -48,6 +55,10 @@ export default function Exam() {
   
   // Cancel dialog
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Auto-save reference
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Find the exam and its course
   const courseData = courses.find(course => 
@@ -70,6 +81,86 @@ export default function Exam() {
   const examBlocks = exam.blocks;
   const currentBlock = examBlocks[currentBlockIndex];
   const isLastBlock = currentBlockIndex === examBlocks.length - 1;
+
+  // Check for existing in-progress attempt
+  useEffect(() => {
+    const checkForExistingAttempt = async () => {
+      if (!user || !examId) return;
+      
+      const existingAttempt = await getInProgressAttempt(examId);
+      if (existingAttempt) {
+        setHasInProgressAttempt(true);
+        setShowResumeDialog(true);
+        setShowTimerDialog(false);
+      }
+    };
+
+    checkForExistingAttempt();
+  }, [user, examId]);
+
+  // Auto-save progress every 30 seconds
+  const saveProgress = useCallback(async () => {
+    if (!currentAttemptId || !examStarted || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      await updateAttempt(currentAttemptId, {
+        user_answers: userAnswers,
+        current_block_index: currentBlockIndex,
+        remaining_seconds: remainingSeconds,
+      });
+    } catch (error) {
+      console.error("Failed to save progress:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [currentAttemptId, userAnswers, currentBlockIndex, remainingSeconds, examStarted, isSaving]);
+
+  useEffect(() => {
+    if (!examStarted || !currentAttemptId) return;
+
+    // Save immediately when answers or block changes
+    saveProgress();
+
+    // Set up auto-save timer
+    if (autoSaveTimerRef.current) {
+      clearInterval(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setInterval(() => {
+      saveProgress();
+    }, 30000); // Auto-save every 30 seconds
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+      }
+    };
+  }, [examStarted, currentAttemptId, saveProgress]);
+
+  const handleResumeExam = async () => {
+    const existingAttempt = await getInProgressAttempt(examId!);
+    if (existingAttempt) {
+      setCurrentAttemptId(existingAttempt.id);
+      setUserAnswers(existingAttempt.user_answers);
+      setCurrentBlockIndex(existingAttempt.current_block_index);
+      setTotalSeconds(existingAttempt.total_seconds);
+      setRemainingSeconds(existingAttempt.remaining_seconds);
+      setExamStarted(true);
+      setShowResumeDialog(false);
+      
+      toast({
+        title: "Exam resumed",
+        description: "Continuing from where you left off.",
+      });
+    }
+  };
+
+  const handleStartFreshExam = () => {
+    setHasInProgressAttempt(false);
+    setShowResumeDialog(false);
+    setShowTimerDialog(true);
+  };
 
   const handleTimerDialogChange = (open: boolean) => {
     if (!open && !examStarted) {
@@ -102,7 +193,7 @@ export default function Exam() {
     return () => clearInterval(interval);
   }, [examStarted, remainingSeconds]);
 
-  const handleStartExam = () => {
+  const handleStartExam = async () => {
     const hours = parseInt(timerHours) || 0;
     const minutes = parseInt(timerMinutes) || 0;
     
@@ -120,6 +211,25 @@ export default function Exam() {
     setRemainingSeconds(total);
     setShowTimerDialog(false);
     setExamStarted(true);
+
+    // Create exam attempt if user is logged in
+    if (user && exam && courseData) {
+      const { data, error } = await createAttempt({
+        exam_id: examId!,
+        course_code: courseData.code,
+        course_name: courseData.name,
+        exam_title: exam.title,
+        exam_data: examBlocks,
+        total_seconds: total,
+        remaining_seconds: total,
+      });
+
+      if (data) {
+        setCurrentAttemptId(data.id);
+      } else if (error) {
+        console.error("Failed to create exam attempt:", error);
+      }
+    }
     
     toast({
       title: "Exam started!",
@@ -127,7 +237,22 @@ export default function Exam() {
     });
   };
 
-  const handleCancelExam = () => {
+  const handleCancelExam = async () => {
+    // Save progress before canceling
+    if (currentAttemptId && user) {
+      await updateAttempt(currentAttemptId, {
+        user_answers: userAnswers,
+        current_block_index: currentBlockIndex,
+        remaining_seconds: remainingSeconds,
+        status: "abandoned",
+      });
+
+      toast({
+        title: "Progress saved",
+        description: "Your exam progress has been saved. You can resume later from your history.",
+      });
+    }
+
     setShowCancelDialog(false);
     navigate("/");
   };
@@ -178,14 +303,35 @@ export default function Exam() {
     });
   };
 
-  const handleSubmitExam = () => {
+  const handleSubmitExam = async () => {
     const blockScores = calculateAllBlockScores();
     const answersArray = Object.values(userAnswers);
+    
+    // Save completed exam attempt if user is logged in
+    if (currentAttemptId && user) {
+      const totalScore = blockScores.reduce((sum, bs) => sum + bs.score, 0);
+      const maxScore = blockScores.length * 5;
+      const percentage = (totalScore / maxScore) * 100;
+
+      await updateAttempt(currentAttemptId, {
+        user_answers: userAnswers,
+        current_block_index: currentBlockIndex,
+        remaining_seconds: remainingSeconds,
+        status: "completed",
+        block_scores: blockScores,
+        total_score: totalScore,
+        max_score: maxScore,
+        percentage: Number(percentage.toFixed(2)),
+        completed_at: new Date().toISOString(),
+      });
+    }
+
     navigate("/results", { 
       state: { 
         blockScores,
         userAnswers: answersArray,
-        examBlocks
+        examBlocks,
+        attemptId: currentAttemptId
       } 
     });
   };
@@ -248,19 +394,39 @@ export default function Exam() {
         </DialogContent>
       </Dialog>
 
+      {/* Resume Exam Dialog */}
+      <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resume Exam?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have an unfinished exam attempt. Would you like to continue where you left off or start a fresh exam?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleStartFreshExam}>
+              Start Fresh
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleResumeExam}>
+              Resume Exam
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Cancel Confirmation Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Exam?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel this exam? All your progress will be lost and you'll return to the home page.
+              Are you sure you want to save and exit this exam? {user ? "Your progress will be saved and you can resume later from your history." : "All your progress will be lost."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Continue Exam</AlertDialogCancel>
             <AlertDialogAction onClick={handleCancelExam} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Cancel Exam
+              {user ? "Save & Exit" : "Cancel Exam"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
