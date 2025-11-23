@@ -105,8 +105,16 @@ export default function History() {
   };
 
   const handleResumeExam = (attemptId: string, examId: string) => {
-    // Navigate to the exam page - the exam component will detect the in-progress attempt
-    navigate(`/exam/${examId}`);
+    // Find the specific attempt to resume
+    const attemptToResume = attempts.find(a => a.id === attemptId);
+    
+    // Navigate to the exam page with the attempt data
+    navigate(`/exam/${examId}`, { 
+      state: { 
+        resumeAttempt: attemptToResume 
+      } 
+    });
+    
     toast({
       title: "Resuming exam",
       description: "Loading your saved progress...",
