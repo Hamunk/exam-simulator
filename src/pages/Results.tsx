@@ -14,7 +14,10 @@ export default function Results() {
   const blockScores = (location.state?.blockScores || []) as BlockScore[];
   const userAnswers = (location.state?.userAnswers || []) as UserAnswer[];
   const blocks = (location.state?.examBlocks || []) as ExamBlock[];
-  const [showReview, setShowReview] = useState(false);
+  const attemptId = location.state?.attemptId;
+  
+  // Auto-expand review if coming from history (has attemptId and user navigated to review)
+  const [showReview, setShowReview] = useState(!!attemptId);
 
   const totalScore = blockScores.reduce((sum, bs) => sum + bs.score, 0);
   const maxTotalScore = blockScores.length * 5;
