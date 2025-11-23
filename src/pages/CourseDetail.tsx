@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Calendar, FileText } from "lucide-react";
+import { Calendar, FileText } from "lucide-react";
 import { courses } from "@/data/coursesData";
 import { Header } from "@/components/Header";
 import {
@@ -53,14 +53,6 @@ const CourseDetail = () => {
 
           {/* Header */}
           <div>
-            <Button
-              variant="ghost"
-              className="mb-4"
-              onClick={() => navigate("/")}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Courses
-            </Button>
             <div className="space-y-2">
               <div className="inline-block px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-semibold">
                 {course.code}
