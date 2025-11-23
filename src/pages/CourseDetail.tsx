@@ -2,8 +2,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Calendar, FileText } from "lucide-react";
-import { courses } from "@/data/coursesData";
 import { Header } from "@/components/Header";
+import { useCourses } from "@/hooks/useCourses";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -17,8 +17,19 @@ import { Link } from "react-router-dom";
 const CourseDetail = () => {
   const navigate = useNavigate();
   const { courseId } = useParams();
+  const { getCourseById, loading } = useCourses();
   
-  const course = courses.find((c) => c.id === courseId);
+  const course = getCourseById(courseId || "");
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <p className="text-muted-foreground">Loading course...</p>
+        </Card>
+      </div>
+    );
+  }
 
   if (!course) {
     return (

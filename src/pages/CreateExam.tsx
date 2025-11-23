@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -69,6 +69,7 @@ interface BlockData {
 
 const CreateExam = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [step, setStep] = useState<"basic" | "structure" | "blocks">("basic");
   const [basicInfo, setBasicInfo] = useState<BasicInfo | null>(null);
@@ -77,11 +78,14 @@ const CreateExam = () => {
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Pre-fill course info from navigation state
+  const state = location.state as { courseCode?: string; courseName?: string } | null;
+
   const basicForm = useForm<BasicInfo>({
     resolver: zodResolver(basicInfoSchema),
     defaultValues: {
-      courseCode: "",
-      courseName: "",
+      courseCode: state?.courseCode || "",
+      courseName: state?.courseName || "",
       examTitle: "",
       examYear: new Date().getFullYear().toString(),
       examSemester: "Spring",

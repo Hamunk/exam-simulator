@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { courses } from "@/data/coursesData";
 import { UserAnswer, BlockScore } from "@/types/exam";
 import { BlockHeader } from "@/components/exam/BlockHeader";
 import { QuestionCard } from "@/components/exam/QuestionCard";
@@ -9,6 +8,7 @@ import { ExamTimer } from "@/components/exam/ExamTimer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useCourses } from "@/hooks/useCourses";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +48,7 @@ export default function Exam() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { createAttempt, updateAttempt } = useExamAttempts();
+  const { getExamById } = useCourses();
   
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, UserAnswer>>({});
@@ -77,11 +78,9 @@ export default function Exam() {
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Find the exam and its course
-  const courseData = courses.find(course => 
-    course.exams.some(e => e.id === examId)
-  );
-  
-  const exam = courseData?.exams.find(e => e.id === examId);
+  const examData = getExamById(examId || "");
+  const exam = examData?.exam;
+  const courseData = examData?.course;
 
   if (!exam || !courseData) {
     return (

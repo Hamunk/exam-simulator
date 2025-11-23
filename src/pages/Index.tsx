@@ -4,20 +4,53 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Brain, Search, BookOpen, User, Plus } from "lucide-react";
-import { courses } from "@/data/coursesData";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
+import { useCourses } from "@/hooks/useCourses";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { courses, loading } = useCourses();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
+  const [newCourseName, setNewCourseName] = useState("");
+  const [newCourseCode, setNewCourseCode] = useState("");
 
   const filteredCourses = courses.filter(
     (course) =>
       course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleAddCourse = () => {
+    if (!newCourseCode.trim() || !newCourseName.trim()) {
+      toast.error("Please fill in both course code and name");
+      return;
+    }
+    
+    // Navigate to create exam with pre-filled course info
+    navigate("/create-exam", { 
+      state: { 
+        courseCode: newCourseCode.toUpperCase(), 
+        courseName: newCourseName 
+      } 
+    });
+    
+    setIsAddCourseOpen(false);
+    setNewCourseCode("");
+    setNewCourseName("");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -78,9 +111,57 @@ const Index = () => {
 
           {/* Courses Grid */}
           <div>
-            <h2 className="text-2xl font-semibold text-foreground mb-6">
-              Available Courses
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-foreground">
+                Available Courses
+              </h2>
+              {user && (
+                <Dialog open={isAddCourseOpen} onOpenChange={setIsAddCourseOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Course
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Course</DialogTitle>
+                      <DialogDescription>
+                        Create a new course by providing its code and name. You'll be redirected to create the first exam for this course.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="course-code">Course Code</Label>
+                        <Input
+                          id="course-code"
+                          placeholder="e.g., TDT4100"
+                          value={newCourseCode}
+                          onChange={(e) => setNewCourseCode(e.target.value.toUpperCase())}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="course-name">Course Name</Label>
+                        <Input
+                          id="course-name"
+                          placeholder="e.g., Object-Oriented Programming"
+                          value={newCourseName}
+                          onChange={(e) => setNewCourseName(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3">
+                      <Button variant="outline" onClick={() => setIsAddCourseOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddCourse}>
+                        Continue to Create Exam
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCourses.map((course) => (
                 <Card
