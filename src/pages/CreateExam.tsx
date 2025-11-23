@@ -416,19 +416,16 @@ def fibonacci(n):
 
                 <form onSubmit={basicForm.handleSubmit(handleBasicSubmit)} className="space-y-4">
                   <div>
-                    <Label htmlFor="courseCode">Course Code *</Label>
+                    <Label htmlFor="courseCode">Course Code</Label>
                     <Input
                       id="courseCode"
                       placeholder="e.g., TDT4172"
                       {...basicForm.register("courseCode")}
+                      disabled
+                      className="bg-muted"
                     />
-                    {basicForm.formState.errors.courseCode && (
-                      <p className="text-sm text-destructive mt-1">
-                        {basicForm.formState.errors.courseCode.message}
-                      </p>
-                    )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      Course must exist. Create it from the home page first.
+                      Inherited from selected course
                     </p>
                   </div>
 
