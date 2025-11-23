@@ -139,7 +139,7 @@ const CourseDetail = () => {
                       <p className="text-sm text-muted-foreground mb-2">
                         {exam.blocks.length} blocks · {exam.blocks.reduce((acc, block) => acc + block.questions.length, 0)} questions
                       </p>
-                      {bestScore !== null && (
+                      {typeof bestScore === 'number' && (
                         <div className="flex items-center gap-1.5 text-sm">
                           <Trophy className="w-4 h-4 text-amber-500" />
                           <span className={`font-semibold ${getScoreColor(bestScore)}`}>
