@@ -60,6 +60,7 @@ export default function Exam() {
   
   // Auto-save reference
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasCheckedForAttempt = useRef(false);
 
   // Find the exam and its course
   const courseData = courses.find(course => 
@@ -83,11 +84,12 @@ export default function Exam() {
   const currentBlock = examBlocks[currentBlockIndex];
   const isLastBlock = currentBlockIndex === examBlocks.length - 1;
 
-  // Check for existing in-progress attempt (only before exam starts)
+  // Check for existing in-progress attempt (only once on mount)
   useEffect(() => {
     const checkForExistingAttempt = async () => {
-      if (!user || !examId || examStarted) return;
+      if (!user || !examId || hasCheckedForAttempt.current) return;
       
+      hasCheckedForAttempt.current = true;
       const attempt = await getInProgressAttempt(examId);
       if (attempt) {
         console.log("Found existing attempt:", attempt);
@@ -98,7 +100,7 @@ export default function Exam() {
     };
 
     checkForExistingAttempt();
-  }, [user, examId, examStarted, getInProgressAttempt]);
+  }, [user, examId, getInProgressAttempt]);
 
   // Auto-save progress every 30 seconds
   const saveProgress = useCallback(async () => {
