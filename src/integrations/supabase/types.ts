@@ -115,6 +115,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_courses: {
+        Row: {
+          course_code: string
+          course_name: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          course_code: string
+          course_name: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          course_code?: string
+          course_name?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_exams: {
         Row: {
           blocks: Json
