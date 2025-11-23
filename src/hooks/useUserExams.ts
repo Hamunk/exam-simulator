@@ -32,16 +32,19 @@ export function useUserExams() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
-        setUserExams([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
+      // Fetch public exams for everyone, or all exams (public + own) for logged-in users
+      let query = supabase
         .from("user_exams")
         .select("*")
         .order("created_at", { ascending: false });
+      
+      if (!user) {
+        // Not logged in - only fetch public exams
+        query = query.eq("is_public", true);
+      }
+      // If logged in, RLS policies will return both public exams and user's own exams
+
+      const { data, error } = await query;
 
       if (error) throw error;
       

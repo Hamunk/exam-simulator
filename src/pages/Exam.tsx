@@ -192,7 +192,7 @@ export default function Exam() {
       return {
         blockId: block.id,
         score,
-        maxScore: 5,
+        maxScore: block.questions.length,
         timeSpentSeconds: finalBlockTimeSpent[block.id] || 0,
       };
     });
@@ -202,7 +202,7 @@ export default function Exam() {
     // Save completed exam attempt if user is logged in
     if (currentAttemptId && user && courseData) {
       const totalScore = blockScores.reduce((sum, bs) => sum + bs.score, 0);
-      const maxScore = blockScores.length * 5;
+      const maxScore = blockScores.reduce((sum, bs) => sum + bs.maxScore, 0);
       const percentage = (totalScore / maxScore) * 100;
 
       await updateAttempt(currentAttemptId, {
