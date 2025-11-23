@@ -70,8 +70,8 @@ export function useCourseSubscriptions() {
         // Group by exam_id and get best score for each
         const examBestScores = new Map<string, number>();
         data?.forEach((attempt) => {
-          const currentBest = examBestScores.get(attempt.exam_id) || 0;
-          if (attempt.percentage > currentBest) {
+          const currentBest = examBestScores.get(attempt.exam_id);
+          if (currentBest === undefined || attempt.percentage > currentBest) {
             examBestScores.set(attempt.exam_id, attempt.percentage);
           }
         });
