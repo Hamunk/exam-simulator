@@ -48,7 +48,7 @@ export default function Exam() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { createAttempt, updateAttempt } = useExamAttempts();
-  const { getExamById } = useCourses();
+  const { getExamById, loading: coursesLoading } = useCourses();
   
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, UserAnswer>>({});
@@ -135,6 +135,16 @@ export default function Exam() {
   }, [examStarted, currentAttemptId, saveProgress]);
 
   // Early return after all hooks have been called
+  if (coursesLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold text-foreground">Loading exam...</h2>
+        </div>
+      </div>
+    );
+  }
+
   if (!exam || !courseData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
