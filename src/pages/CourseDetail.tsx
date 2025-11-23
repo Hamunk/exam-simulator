@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Calendar, FileText, Plus, CheckCircle2, Trophy } from "lucide-react";
+import { Calendar, FileText, Plus, CheckCircle2, Trophy, Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { useCourses } from "@/hooks/useCourses";
@@ -17,6 +17,8 @@ import {
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { Exam } from "@/data/coursesData";
 
 const CourseDetail = () => {
   const navigate = useNavigate();
@@ -27,6 +29,32 @@ const CourseDetail = () => {
   const course = getCourseById(courseId || "");
   const { hasAttempted, loading: attemptsLoading } = useExamAttemptStatus(course?.code || "");
   const { getBestScore, loading: scoresLoading } = useExamBestScores(course?.code || "");
+
+  const handleExportExam = (exam: Exam, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const examJson = {
+      courseCode: course?.code || "",
+      examTitle: exam.title,
+      examYear: exam.year,
+      examSemester: exam.semester,
+      isPublic: exam.isPublic || false,
+      blocks: exam.blocks,
+    };
+
+    const jsonString = JSON.stringify(examJson, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${course?.code}_${exam.title}_${exam.year}_${exam.semester}.json`.replace(/\s+/g, "_");
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Exam JSON exported successfully!");
+  };
 
   if (loading) {
     return (
@@ -119,9 +147,22 @@ const CourseDetail = () => {
                         <FileText className="w-6 h-6 text-primary" />
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
-                          <span>{exam.year}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="w-4 h-4" />
+                            <span>{exam.year}</span>
+                          </div>
+                          {user && exam.userId === user.id && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => handleExportExam(exam, e)}
+                              title="Export exam JSON"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                         {user && attempted && (
                           <Badge variant="secondary" className="flex items-center gap-1">
