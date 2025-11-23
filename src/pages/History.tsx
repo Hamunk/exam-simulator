@@ -14,13 +14,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Home, Clock, CheckCircle, XCircle, PlayCircle, Loader2 } from "lucide-react";
+import { Home, Clock, CheckCircle, XCircle, PlayCircle, Loader2, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function History() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { attempts, loading: attemptsLoading, getCompletedAttempts } = useExamAttempts();
+  const { attempts, loading: attemptsLoading, getCompletedAttempts, deleteAttempt } = useExamAttempts();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -89,6 +102,28 @@ export default function History() {
     if (percentage >= 80) return "text-primary";
     if (percentage >= 70) return "text-warning";
     return "text-destructive";
+  };
+
+  const handleResumeExam = (attemptId: string, examId: string) => {
+    // Navigate to the exam page - the exam component will detect the in-progress attempt
+    navigate(`/exam/${examId}`);
+  };
+
+  const handleDeleteAttempt = async (attemptId: string) => {
+    const { error } = await deleteAttempt(attemptId);
+    
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete exam attempt. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Deleted",
+        description: "Exam attempt has been deleted.",
+      });
+    }
   };
 
   if (authLoading || attemptsLoading) {
@@ -182,6 +217,7 @@ export default function History() {
                 <TableHead>Score</TableHead>
                 <TableHead>Time to Complete</TableHead>
                 <TableHead>Started</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -226,6 +262,48 @@ export default function History() {
                       {formatDistanceToNow(new Date(attempt.started_at), {
                         addSuffix: true,
                       })}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {attempt.status === "in_progress" && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleResumeExam(attempt.id, attempt.exam_id)}
+                          className="gap-2"
+                        >
+                          <PlayCircle className="w-4 h-4" />
+                          Resume
+                        </Button>
+                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Exam Attempt?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete this exam attempt. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteAttempt(attempt.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
