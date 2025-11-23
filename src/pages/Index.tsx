@@ -41,17 +41,22 @@ const Index = () => {
       return;
     }
     
+    console.log('Creating course:', { code: newCourseCode, name: newCourseName });
+    
     try {
       await createUserCourse({
         course_code: newCourseCode.toUpperCase(),
         course_name: newCourseName,
       });
       
+      console.log('Course created successfully, current courses count:', courses.length);
+      
       toast.success("Course created successfully!");
       setIsAddCourseOpen(false);
       setNewCourseCode("");
       setNewCourseName("");
     } catch (error: any) {
+      console.error('Error creating course:', error);
       if (error.message?.includes("duplicate")) {
         toast.error("This course already exists");
       } else {

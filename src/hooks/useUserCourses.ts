@@ -57,9 +57,16 @@ export function useUserCourses() {
 
       if (error) throw error;
       
+      console.log('Course created, adding to state:', data);
+      
       // Optimistically add the new course to the list without refetching
       if (data) {
-        setUserCourses(prev => [data, ...prev]);
+        setUserCourses(prev => {
+          console.log('Previous userCourses:', prev.length);
+          const updated = [data, ...prev];
+          console.log('Updated userCourses:', updated.length);
+          return updated;
+        });
       }
       
       return data;
