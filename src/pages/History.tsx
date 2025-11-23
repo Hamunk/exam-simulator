@@ -5,6 +5,7 @@ import { useExamAttempts } from "@/hooks/useExamAttempts";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Header } from "@/components/Header";
 import {
   Table,
   TableBody,
@@ -162,21 +163,17 @@ export default function History() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="py-8 px-4">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header */}
           <div>
             <h1 className="text-4xl font-bold text-foreground">Exam History</h1>
             <p className="text-muted-foreground mt-2">
               View all your exam attempts and track your progress
             </p>
           </div>
-          <Button variant="outline" onClick={() => navigate("/")}>
-            <Home className="w-4 h-4 mr-2" />
-            Home
-          </Button>
-        </div>
 
         {/* Statistics Cards */}
         <div className="grid md:grid-cols-3 gap-4">
@@ -358,6 +355,7 @@ export default function History() {
             <Button onClick={() => navigate("/")}>Browse Courses</Button>
           </Card>
         )}
+        </div>
       </div>
     </div>
   );

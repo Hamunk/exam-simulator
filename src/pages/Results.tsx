@@ -5,8 +5,9 @@ import { QuestionCard } from "@/components/exam/QuestionCard";
 import { BlockHeader } from "@/components/exam/BlockHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Home } from "lucide-react";
+import { Home, ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { Header } from "@/components/Header";
 
 export default function Results() {
   const location = useLocation();
@@ -32,8 +33,20 @@ export default function Results() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="py-8 px-4">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Back to History Button (only show if coming from history) */}
+          {attemptId && (
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/history")}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to History
+            </Button>
+          )}
         <Card className="p-8 text-center shadow-elevated">
           <h1 className="text-4xl font-bold text-foreground mb-4">
             Exam Complete!
@@ -108,6 +121,7 @@ export default function Results() {
             ))}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
