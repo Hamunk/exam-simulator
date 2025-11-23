@@ -99,6 +99,14 @@ const CourseDetail = () => {
             {course.exams.map((exam) => {
               const attempted = user ? hasAttempted(exam.id) : false;
               const bestScore = user ? getBestScore(exam.id) : null;
+              
+              // Determine score color
+              const getScoreColor = (score: number) => {
+                if (score >= 80) return "text-green-600 dark:text-green-500";
+                if (score >= 60) return "text-yellow-600 dark:text-yellow-500";
+                return "text-red-600 dark:text-red-500";
+              };
+              
               return (
                 <Card
                   key={exam.id}
@@ -134,25 +142,25 @@ const CourseDetail = () => {
                       {bestScore !== null && (
                         <div className="flex items-center gap-1.5 text-sm">
                           <Trophy className="w-4 h-4 text-amber-500" />
-                          <span className="font-semibold text-foreground">
+                          <span className={`font-semibold ${getScoreColor(bestScore)}`}>
                             Best: {bestScore}%
                           </span>
                         </div>
                       )}
                     </div>
 
-                  <Button
-                    className="w-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/exam/${exam.id}`);
-                    }}
-                  >
-                    {attempted ? "Resume/Retry" : "Start Exam"}
-                  </Button>
-                </div>
-              </Card>
-            );
+                    <Button
+                      className="w-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/exam/${exam.id}`);
+                      }}
+                    >
+                      {attempted ? "Redo Exam" : "Start Exam"}
+                    </Button>
+                  </div>
+                </Card>
+              );
             })}
           </div>
 
