@@ -49,12 +49,14 @@ export default function Exam() {
   // Cancel dialog
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
-  // Find the exam from all courses
-  const exam = courses
-    .flatMap(course => course.exams)
-    .find(e => e.id === examId);
+  // Find the exam and its course
+  const courseData = courses.find(course => 
+    course.exams.some(e => e.id === examId)
+  );
+  
+  const exam = courseData?.exams.find(e => e.id === examId);
 
-  if (!exam) {
+  if (!exam || !courseData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-4">
@@ -68,6 +70,14 @@ export default function Exam() {
   const examBlocks = exam.blocks;
   const currentBlock = examBlocks[currentBlockIndex];
   const isLastBlock = currentBlockIndex === examBlocks.length - 1;
+
+  const handleTimerDialogChange = (open: boolean) => {
+    if (!open && !examStarted) {
+      // User closed dialog without starting exam - go back to course page
+      navigate(`/course/${courseData.id}`);
+    }
+    setShowTimerDialog(open);
+  };
 
   // Timer countdown effect
   useEffect(() => {
@@ -193,7 +203,7 @@ export default function Exam() {
   return (
     <>
       {/* Timer Setup Dialog */}
-      <Dialog open={showTimerDialog} onOpenChange={setShowTimerDialog}>
+      <Dialog open={showTimerDialog} onOpenChange={handleTimerDialogChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
