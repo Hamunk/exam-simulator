@@ -180,47 +180,120 @@ def fibonacci(n):
 
             {/* LLM Prompt Template */}
             <div>
-              <h3 className="font-semibold text-base mb-2">Using AI to Format Exams</h3>
-              <p className="text-muted-foreground mb-2">Copy this prompt template to your favorite LLM:</p>
+              <h3 className="font-semibold text-base mb-2">🤖 LLM Prompt for Formatting Exams</h3>
+              <p className="text-muted-foreground mb-2">
+                <strong>This JSON format is designed for LLMs to create.</strong> Copy the prompt below to ChatGPT, Claude, or any LLM:
+              </p>
               <pre className="bg-muted p-4 rounded-lg text-xs whitespace-pre-wrap">
-{`Convert the following exam questions into JSON format matching this structure:
+{`You are formatting exam questions into JSON. Follow these rules EXACTLY:
 
+STRUCTURE:
 {
   "courseCode": "COURSE_CODE",
-  "examTitle": "EXAM_TITLE",
+  "examTitle": "EXAM_TITLE", 
   "examYear": "YYYY",
-  "examSemester": "Spring/Fall",
+  "examSemester": "Spring or Fall",
   "isPublic": true,
-  "blocks": [
-    {
-      "id": "block-N",
-      "title": "Block Title",
-      "backgroundInfo": "Optional context",
-      "canBeNegative": false,
-      "questions": [
-        {
-          "id": "q-N-M",
-          "text": "Question text",
-          "options": ["option1", "option2", ...],
-          "correctAnswers": [index1, index2, ...],
-          "multipleCorrect": true/false
-        }
-      ]
-    }
-  ]
+  "blocks": [ /* array of block objects */ ]
 }
 
-Rules:
-- Use unique IDs: "block-1", "block-2" for blocks
-- Use "q-1-1", "q-1-2" format for questions (block-question)
-- correctAnswers contains 0-based indices (0 = first option)
-- multipleCorrect: true if >1 correct answer, false if exactly 1
-- Use LaTeX for math: $inline$ or $$display$$
-- Use \`\`\`language for code blocks
+BLOCK STRUCTURE:
+{
+  "id": "block-1",  // increment: block-1, block-2, etc.
+  "title": "Block title here",
+  "backgroundInfo": "",  // optional context for the entire block
+  "canBeNegative": false,
+  "questions": [ /* array of question objects */ ]
+}
 
-My questions:
+QUESTION STRUCTURE:
+{
+  "id": "q-1-1",  // format: q-{blockNum}-{questionNum}
+  "text": "Question text here",
+  "options": ["Option A", "Option B", "Option C", "Option D"],
+  "correctAnswers": [0],  // array of indices (0-based!)
+  "multipleCorrect": false  // CRITICAL: false if 1 answer, true if 2+ answers
+}
+
+🔴 CRITICAL RULES - LLMs OFTEN GET THESE WRONG:
+
+1. multipleCorrect field:
+   - If ONLY ONE correct answer → "multipleCorrect": false
+   - If TWO OR MORE correct answers → "multipleCorrect": true
+   - This determines if users see radio buttons (single) or checkboxes (multiple)
+
+2. correctAnswers array:
+   - Use 0-based indices: [0] = first option, [1] = second option, etc.
+   - Can have multiple indices: [0, 2] = first and third options are correct
+   - Length MUST match multipleCorrect (length 1 → false, length >1 → true)
+
+3. Math notation (LaTeX):
+   - Inline math: Use $x^2$ for inline formulas
+   - Display math: Use $$\\frac{a}{b}$$ for centered equations
+   - Escape backslashes in JSON: Use \\\\sum not \\sum, \\\\frac not \\frac
+   - Example: "text": "What is $\\\\sqrt{16}$?"
+   - Example: "text": "Solve: $$x^2 + 2x + 1 = 0$$"
+
+4. Code blocks:
+   - Use triple backticks with language identifier
+   - Escape newlines as \\n in JSON strings
+   - Example: "text": "What does this output?\\n\`\`\`python\\nprint(2 ** 3)\\n\`\`\`"
+
+5. ID naming:
+   - Blocks: "block-1", "block-2", "block-3", etc.
+   - Questions: "q-1-1", "q-1-2" (first block), "q-2-1", "q-2-2" (second block), etc.
+
+EXAMPLE - Single correct answer:
+{
+  "id": "q-1-1",
+  "text": "What is $2^3$?",
+  "options": ["4", "6", "8", "16"],
+  "correctAnswers": [2],
+  "multipleCorrect": false
+}
+
+EXAMPLE - Multiple correct answers:
+{
+  "id": "q-1-2",
+  "text": "Which are prime numbers?",
+  "options": ["2", "4", "7", "9"],
+  "correctAnswers": [0, 2],
+  "multipleCorrect": true
+}
+
+EXAMPLE - Math equation:
+{
+  "id": "q-2-1",
+  "text": "Solve for x: $\\\\frac{x}{2} = 4$",
+  "options": ["2", "4", "8", "16"],
+  "correctAnswers": [2],
+  "multipleCorrect": false
+}
+
+EXAMPLE - Python code:
+{
+  "id": "q-3-1",
+  "text": "What does this code output?\\n\`\`\`python\\ndef f(x):\\n    return x * 2\\nprint(f(5))\\n\`\`\`",
+  "options": ["5", "10", "15", "20"],
+  "correctAnswers": [1],
+  "multipleCorrect": false
+}
+
+Now format these exam questions following the rules above:
+
 [PASTE YOUR QUESTIONS HERE]`}
               </pre>
+              <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-2">
+                  ⚠️ Common LLM Mistakes to Check:
+                </p>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>✓ If 2+ correct answers, ensure <code className="bg-muted px-1 py-0.5 rounded">multipleCorrect: true</code></li>
+                  <li>✓ Math uses double backslashes: <code className="bg-muted px-1 py-0.5 rounded">\\\\frac</code> not <code className="bg-muted px-1 py-0.5 rounded">\\frac</code></li>
+                  <li>✓ Code blocks use <code className="bg-muted px-1 py-0.5 rounded">\\n</code> for newlines in JSON</li>
+                  <li>✓ correctAnswers uses 0-based indices (first option = 0)</li>
+                </ul>
+              </div>
             </div>
 
             {/* Common Mistakes */}
