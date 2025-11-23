@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Button } from "@/components/ui/button";
+import { RotateCcw } from "lucide-react";
 import { InlineMath, BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -33,6 +35,10 @@ export function QuestionCard({
 
   const handleRadioChange = (value: string) => {
     onAnswerChange(question.id, [parseInt(value)]);
+  };
+
+  const handleReset = () => {
+    onAnswerChange(question.id, []);
   };
 
   const getOptionClassName = (optionIndex: number) => {
@@ -175,9 +181,22 @@ export function QuestionCard({
   return (
     <Card className="p-6 shadow-card transition-shadow hover:shadow-elevated">
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground">
-          Question {questionNumber}
-        </h3>
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="text-lg font-semibold text-foreground">
+            Question {questionNumber}
+          </h3>
+          {!showResults && (userAnswer?.selectedOptions?.length ?? 0) > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset
+            </Button>
+          )}
+        </div>
         <div className="text-foreground">{renderText(question.text)}</div>
         
         {question.multipleCorrect && !showResults && (

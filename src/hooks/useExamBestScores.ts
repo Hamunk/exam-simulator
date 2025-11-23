@@ -35,7 +35,6 @@ export function useExamBestScores(courseCode: string) {
           }
         });
 
-        console.log('Best scores computed:', scores);
         setBestScores(scores);
       } catch (error: any) {
         console.error("Error fetching best scores:", error);
@@ -50,9 +49,7 @@ export function useExamBestScores(courseCode: string) {
   }, [courseCode]);
 
   const getBestScore = (examId: string): number | null => {
-    const score = examId in bestScores ? bestScores[examId] : null;
-    console.log(`getBestScore(${examId}):`, score, 'bestScores:', bestScores);
-    return score;
+    return examId in bestScores ? bestScores[examId] : null;
   };
 
   return {
