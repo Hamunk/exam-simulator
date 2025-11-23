@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Brain, Search, BookOpen, User, LogOut, LogIn } from "lucide-react";
+import { Brain, Search, BookOpen, User, LogOut, LogIn, History as HistoryIcon } from "lucide-react";
 import { courses } from "@/data/coursesData";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -75,6 +75,10 @@ const Index = () => {
                       {user.email}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/history")}>
+                      <HistoryIcon className="w-4 h-4 mr-2" />
+                      Exam History
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Sign Out
