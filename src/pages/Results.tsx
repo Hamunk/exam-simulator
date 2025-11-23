@@ -5,7 +5,7 @@ import { QuestionCard } from "@/components/exam/QuestionCard";
 import { BlockHeader } from "@/components/exam/BlockHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Home, RotateCcw } from "lucide-react";
+import { Home } from "lucide-react";
 import { useState } from "react";
 
 export default function Results() {
@@ -73,10 +73,6 @@ export default function Results() {
           </Button>
           <Button variant="outline" onClick={() => setShowReview(!showReview)}>
             {showReview ? "Hide Review" : "Review Answers"}
-          </Button>
-          <Button onClick={() => navigate("/exam")}>
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Retake Exam
           </Button>
         </div>
 
