@@ -118,6 +118,29 @@ export function useExamAttempts() {
         throw new Error("User must be logged in to create exam attempts");
       }
 
+      // Ensure profile exists before creating attempt (defensive against missing profile)
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        // Create profile if it doesn't exist
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            id: user.id,
+            email: user.email || "",
+            display_name: user.user_metadata?.display_name || null,
+          });
+
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          throw new Error("Failed to create user profile");
+        }
+      }
+
       const { data, error } = await supabase
         .from("exam_attempts")
         .insert({

@@ -56,6 +56,13 @@ export function useUserCourses() {
         .single();
 
       if (error) throw error;
+      
+      // Immediately update local state for instant UI feedback
+      if (data) {
+        setUserCourses(prev => [data, ...prev]);
+      }
+      
+      // Also refresh from database to ensure consistency
       await fetchUserCourses();
       return data;
     } catch (error: any) {
