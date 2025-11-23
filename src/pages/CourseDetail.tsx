@@ -1,7 +1,8 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Calendar, FileText } from "lucide-react";
+import { Calendar, FileText, Plus } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { useCourses } from "@/hooks/useCourses";
 import {
@@ -17,6 +18,7 @@ import { Link } from "react-router-dom";
 const CourseDetail = () => {
   const navigate = useNavigate();
   const { courseId } = useParams();
+  const { user } = useAuth();
   const { getCourseById, loading } = useCourses();
   
   const course = getCourseById(courseId || "");
@@ -63,7 +65,7 @@ const CourseDetail = () => {
           </Breadcrumb>
 
           {/* Header */}
-          <div>
+          <div className="flex items-start justify-between">
             <div className="space-y-2">
               <div className="inline-block px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-semibold">
                 {course.code}
@@ -75,6 +77,16 @@ const CourseDetail = () => {
                 Select an exam to start practicing
               </p>
             </div>
+            {user && (
+              <Button 
+                onClick={() => navigate("/create-exam", { 
+                  state: { courseCode: course.code, courseName: course.name } 
+                })}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Exam
+              </Button>
+            )}
           </div>
 
           {/* Exams Grid */}

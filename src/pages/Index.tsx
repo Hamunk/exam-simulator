@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Brain, Search, BookOpen, User, Plus } from "lucide-react";
+import { Brain, Search, BookOpen, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { useCourses } from "@/hooks/useCourses";
@@ -82,29 +82,6 @@ const Index = () => {
               preparation with comprehensive practice exams.
             </p>
           </div>
-
-          {/* User Welcome Card */}
-          {user && (
-            <Card className="max-w-2xl mx-auto p-6 bg-primary/5 border-primary/20">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                  <User className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground mb-1">
-                    Welcome back!
-                  </h3>
-                  <p className="text-muted-foreground text-sm mb-3">
-                    You're signed in and can now create your own custom exams. Start practicing with existing courses or create your own.
-                  </p>
-                  <Button onClick={() => navigate("/create-exam")} size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create New Exam
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )}
 
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto">
