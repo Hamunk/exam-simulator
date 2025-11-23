@@ -8,6 +8,8 @@ export function useCourses() {
   const { userCourses, loading: coursesLoading } = useUserCourses();
 
   const allCourses = useMemo(() => {
+    console.log("Rebuilding courses list. User courses:", userCourses.length, "User exams:", userExams.length);
+    
     // Start with hardcoded courses
     const coursesMap = new Map<string, Course>();
     
