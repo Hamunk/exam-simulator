@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { examBlocks } from "@/data/examData";
+import { useNavigate, useParams } from "react-router-dom";
+import { courses } from "@/data/coursesData";
 import { UserAnswer, BlockScore } from "@/types/exam";
 import { BlockHeader } from "@/components/exam/BlockHeader";
 import { QuestionCard } from "@/components/exam/QuestionCard";
@@ -10,9 +10,27 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 
 export default function Exam() {
   const navigate = useNavigate();
+  const { examId } = useParams();
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, UserAnswer>>({});
 
+  // Find the exam from all courses
+  const exam = courses
+    .flatMap(course => course.exams)
+    .find(e => e.id === examId);
+
+  if (!exam) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold text-foreground">Exam Not Found</h2>
+          <Button onClick={() => navigate("/")}>Back to Courses</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const examBlocks = exam.blocks;
   const currentBlock = examBlocks[currentBlockIndex];
   const isLastBlock = currentBlockIndex === examBlocks.length - 1;
 
