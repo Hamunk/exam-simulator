@@ -7,7 +7,6 @@ import { Brain, Search, BookOpen, User, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { useCourses } from "@/hooks/useCourses";
-import { useUserCourses } from "@/hooks/useUserCourses";
 import {
   Dialog,
   DialogContent,
@@ -22,8 +21,7 @@ import { toast } from "sonner";
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { courses, loading } = useCourses();
-  const { createUserCourse } = useUserCourses();
+  const { courses, loading, createUserCourse } = useCourses();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
   const [newCourseName, setNewCourseName] = useState("");
