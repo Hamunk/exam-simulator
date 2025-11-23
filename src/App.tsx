@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import CourseDetail from "./pages/CourseDetail";
 import Exam from "./pages/Exam";
 import Results from "./pages/Results";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,6 +20,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/course/:courseId" element={<CourseDetail />} />
           <Route path="/exam/:examId" element={<Exam />} />
           <Route path="/results" element={<Results />} />
