@@ -82,21 +82,6 @@ export default function Exam() {
   const exam = examData?.exam;
   const courseData = examData?.course;
 
-  if (!exam || !courseData) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-foreground">Exam Not Found</h2>
-          <Button onClick={() => navigate("/")}>Back to Courses</Button>
-        </div>
-      </div>
-    );
-  }
-
-  const examBlocks = exam.blocks;
-  const currentBlock = examBlocks[currentBlockIndex];
-  const isLastBlock = currentBlockIndex === examBlocks.length - 1;
-
   // Check if we're resuming from history (only show resume dialog if coming from history)
   useEffect(() => {
     const resumeAttempt = location.state?.resumeAttempt;
@@ -148,6 +133,22 @@ export default function Exam() {
       }
     };
   }, [examStarted, currentAttemptId, saveProgress]);
+
+  // Early return after all hooks have been called
+  if (!exam || !courseData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold text-foreground">Exam Not Found</h2>
+          <Button onClick={() => navigate("/")}>Back to Courses</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const examBlocks = exam.blocks;
+  const currentBlock = examBlocks[currentBlockIndex];
+  const isLastBlock = currentBlockIndex === examBlocks.length - 1;
 
   const handleResumeExam = async () => {
     if (!existingAttempt) return;
@@ -206,7 +207,7 @@ export default function Exam() {
   };
 
   const handleTimerDialogChange = (open: boolean) => {
-    if (!open && !examStarted) {
+    if (!open && !examStarted && courseData) {
       // User closed dialog without starting exam - go back to course page
       navigate(`/course/${courseData.id}`);
     }
@@ -485,33 +486,34 @@ export default function Exam() {
       </Dialog>
 
       {/* Resume Exam Dialog */}
-      <Dialog open={showResumeDialog} onOpenChange={(open) => {
-        if (!open && existingAttempt) {
-          // If closing without action, go back
-          navigate(`/course/${courseData.id}`);
-        }
-        setShowResumeDialog(open);
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <PlayCircle className="w-5 h-5" />
-              Resume Exam
-            </DialogTitle>
-            <DialogDescription>
-              You have an unfinished exam attempt with time remaining.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {existingAttempt && (
-            <div className="space-y-4">
-              <div className="p-4 bg-muted rounded-lg space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Progress:</span>
-                  <span className="font-semibold">
-                    Block {existingAttempt.current_block_index + 1} of {examBlocks.length}
-                  </span>
-                </div>
+      {exam && courseData && (
+        <Dialog open={showResumeDialog} onOpenChange={(open) => {
+          if (!open && existingAttempt) {
+            // If closing without action, go back
+            navigate(`/course/${courseData.id}`);
+          }
+          setShowResumeDialog(open);
+        }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <PlayCircle className="w-5 h-5" />
+                Resume Exam
+              </DialogTitle>
+              <DialogDescription>
+                You have an unfinished exam attempt with time remaining.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {existingAttempt && (
+              <div className="space-y-4">
+                <div className="p-4 bg-muted rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Progress:</span>
+                    <span className="font-semibold">
+                      Block {existingAttempt.current_block_index + 1} of {exam.blocks.length}
+                    </span>
+                  </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Questions answered:</span>
                   <span className="font-semibold">
@@ -556,6 +558,7 @@ export default function Exam() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
 
       {/* Cancel Confirmation Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
