@@ -6,6 +6,10 @@ export interface Exam {
   year: string;
   semester: string;
   blocks: ExamBlock[];
+  isUserCreated?: boolean;
+  userId?: string;
+  isPublic?: boolean;
+  createdAt?: string;
 }
 
 export interface Course {
@@ -13,6 +17,7 @@ export interface Course {
   code: string;
   name: string;
   exams: Exam[];
+  isUserCreated?: boolean;
 }
 
 // Sample exam data

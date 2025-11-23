@@ -14,7 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_exams: {
+        Row: {
+          blocks: Json
+          course_code: string
+          course_name: string
+          created_at: string
+          exam_semester: string
+          exam_title: string
+          exam_year: string
+          id: string
+          is_public: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blocks: Json
+          course_code: string
+          course_name: string
+          created_at?: string
+          exam_semester: string
+          exam_title: string
+          exam_year: string
+          id?: string
+          is_public?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blocks?: Json
+          course_code?: string
+          course_name?: string
+          created_at?: string
+          exam_semester?: string
+          exam_title?: string
+          exam_year?: string
+          id?: string
+          is_public?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_exams_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
