@@ -16,9 +16,12 @@ export default function Results() {
   const userAnswers = (location.state?.userAnswers || []) as UserAnswer[];
   const blocks = (location.state?.examBlocks || []) as ExamBlock[];
   const attemptId = location.state?.attemptId;
+  const courseId = location.state?.courseId;
+  const courseName = location.state?.courseName;
   
-  // Auto-expand review if coming from history (has attemptId and user navigated to review)
-  const [showReview, setShowReview] = useState(!!attemptId);
+  // Auto-expand review if coming from history (has attemptId but no courseId)
+  const fromHistory = attemptId && !courseId;
+  const [showReview, setShowReview] = useState(fromHistory);
 
   const totalScore = blockScores.reduce((sum, bs) => sum + bs.score, 0);
   const maxTotalScore = blockScores.length * 5;
@@ -37,8 +40,8 @@ export default function Results() {
       <Header />
       <div className="py-8 px-4">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Back to History Button (only show if coming from history) */}
-          {attemptId && (
+          {/* Back Button */}
+          {fromHistory ? (
             <Button
               variant="ghost"
               onClick={() => navigate("/history")}
@@ -46,7 +49,15 @@ export default function Results() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to History
             </Button>
-          )}
+          ) : courseId ? (
+            <Button
+              variant="ghost"
+              onClick={() => navigate(`/course/${courseId}`)}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to {courseName || "Course"}
+            </Button>
+          ) : null}
         <Card className="p-8 text-center shadow-elevated">
           <h1 className="text-4xl font-bold text-foreground mb-4">
             Exam Complete!
