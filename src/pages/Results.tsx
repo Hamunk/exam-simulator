@@ -33,7 +33,7 @@ export default function Results() {
   const [showReview, setShowReview] = useState(fromHistory);
 
   const totalScore = blockScores.reduce((sum, bs) => sum + bs.score, 0);
-  const maxTotalScore = blockScores.length * 5;
+  const maxTotalScore = blockScores.reduce((sum, bs) => sum + bs.maxScore, 0);
   const percentage = (totalScore / maxTotalScore) * 100;
 
   const getOverallFeedback = () => {
