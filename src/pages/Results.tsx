@@ -5,7 +5,7 @@ import { QuestionCard } from "@/components/exam/QuestionCard";
 import { BlockHeader } from "@/components/exam/BlockHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Home, ArrowLeft, Clock } from "lucide-react";
+import { Clock, Home } from "lucide-react";
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import {
@@ -106,24 +106,6 @@ export default function Results() {
             </BreadcrumbList>
           </Breadcrumb>
 
-          {/* Back Button */}
-          {fromHistory ? (
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/history")}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to History
-            </Button>
-          ) : courseId ? (
-            <Button
-              variant="ghost"
-              onClick={() => navigate(`/course/${courseId}`)}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to {courseName || "Course"}
-            </Button>
-          ) : null}
         <Card className="p-8 text-center shadow-elevated">
           <h1 className="text-4xl font-bold text-foreground mb-4">
             Exam Complete!
