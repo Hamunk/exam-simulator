@@ -232,7 +232,7 @@ export function QuestionCard({
             ))
           ) : (
             <RadioGroup
-              value={userAnswer?.selectedOptions[0]?.toString()}
+              value={userAnswer?.selectedOptions[0] !== undefined ? userAnswer.selectedOptions[0].toString() : undefined}
               onValueChange={handleRadioChange}
               disabled={showResults}
             >
