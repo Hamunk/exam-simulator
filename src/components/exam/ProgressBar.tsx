@@ -12,7 +12,6 @@ export function ProgressBar({ current, total }: ProgressBarProps) {
         <span>
           Block {current} of {total}:
         </span>
-        <span>{Math.round(percentage)}% Complete</span>
       </div>
       <div className="h-2 bg-secondary rounded-full overflow-hidden">
         <div className="h-full bg-primary transition-all duration-500 ease-out" style={{ width: `${percentage}%` }} />
