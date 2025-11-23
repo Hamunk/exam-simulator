@@ -181,6 +181,133 @@ const sampleExamBlocks: ExamBlock[] = [
   },
 ];
 
+// Math and code exam blocks
+const mathCodeExamBlocks: ExamBlock[] = [
+  {
+    id: "block-math",
+    title: "Block 1: Mathematical Concepts",
+    backgroundInfo:
+      "Mathematics is the foundation of computer science and data analysis. This block tests your understanding of mathematical notation, equations, and problem-solving using proper mathematical expressions.",
+    canBeNegative: false,
+    questions: [
+      {
+        id: "qm-1",
+        text: "What is the derivative of $f(x) = x^2 + 3x + 2$?",
+        options: [
+          "$f'(x) = 2x + 3$",
+          "$f'(x) = x + 3$",
+          "$f'(x) = 2x^2 + 3$",
+          "$f'(x) = 2x + 2$",
+        ],
+        correctAnswers: [0],
+        multipleCorrect: false,
+      },
+      {
+        id: "qm-2",
+        text: "Which of the following represents the quadratic formula?\n\n$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$\n\nWhat are the solutions for $ax^2 + bx + c = 0$?",
+        options: [
+          "The formula shown above",
+          "$x = -b \\pm \\sqrt{b^2 - 4ac}$",
+          "$x = \\frac{b \\pm \\sqrt{b^2 - 4ac}}{2a}$",
+          "$x = \\frac{-b}{2a}$",
+        ],
+        correctAnswers: [0],
+        multipleCorrect: false,
+      },
+      {
+        id: "qm-3",
+        text: "Which statements about the integral are true? (Select all that apply)\n\n$$\\int_a^b f(x)dx$$",
+        options: [
+          "It represents the area under the curve $f(x)$ from $a$ to $b$",
+          "It's the inverse operation of differentiation",
+          "$\\int x^n dx = \\frac{x^{n+1}}{n+1} + C$ for $n \\neq -1$",
+          "The integral of a constant is always zero",
+        ],
+        correctAnswers: [0, 1, 2],
+        multipleCorrect: true,
+      },
+      {
+        id: "qm-4",
+        text: "What is the value of $\\lim_{x \\to 0} \\frac{\\sin(x)}{x}$?",
+        options: ["$0$", "$1$", "$\\infty$", "Undefined"],
+        correctAnswers: [1],
+        multipleCorrect: false,
+      },
+      {
+        id: "qm-5",
+        text: "Which of these matrix operations are valid? (Select all that apply)\n\nGiven: $A$ is a $2 \\times 3$ matrix and $B$ is a $3 \\times 2$ matrix",
+        options: [
+          "$AB$ (matrix multiplication)",
+          "$BA$ (matrix multiplication)",
+          "$A + B$ (matrix addition)",
+          "$A^T$ (transpose of A)",
+        ],
+        correctAnswers: [0, 1, 3],
+        multipleCorrect: true,
+      },
+    ],
+  },
+  {
+    id: "block-python",
+    title: "Block 2: Python Programming",
+    backgroundInfo:
+      "Python is widely used in data science, machine learning, and scientific computing. This block tests your ability to read, understand, and reason about Python code.",
+    canBeNegative: false,
+    questions: [
+      {
+        id: "qp-1",
+        text: "What will be the output of the following Python code?\n\n```python\ndef fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\nprint(fibonacci(5))\n```",
+        options: ["3", "5", "8", "13"],
+        correctAnswers: [1],
+        multipleCorrect: false,
+      },
+      {
+        id: "qp-2",
+        text: "Which statements about the following list comprehension are true? (Select all that apply)\n\n```python\nsquares = [x**2 for x in range(10) if x % 2 == 0]\n```",
+        options: [
+          "It creates a list of squares of even numbers from 0 to 9",
+          "The resulting list will have 5 elements",
+          "It's equivalent to a for loop with an if statement",
+          "It will include the square of 10",
+        ],
+        correctAnswers: [0, 1, 2],
+        multipleCorrect: true,
+      },
+      {
+        id: "qp-3",
+        text: "What is the output of this code?\n\n```python\nmy_dict = {'a': 1, 'b': 2, 'c': 3}\nresult = {v: k for k, v in my_dict.items()}\nprint(result[2])\n```",
+        options: ["'a'", "'b'", "'c'", "KeyError"],
+        correctAnswers: [1],
+        multipleCorrect: false,
+      },
+      {
+        id: "qp-4",
+        text: "Which of the following will correctly import and use NumPy? (Select all that apply)",
+        options: [
+          "```python\nimport numpy as np\narr = np.array([1, 2, 3])\n```",
+          "```python\nfrom numpy import *\narr = array([1, 2, 3])\n```",
+          "```python\nimport numpy\narr = numpy.array([1, 2, 3])\n```",
+          "```python\nfrom numpy import array\narr = array([1, 2, 3])\n```",
+        ],
+        correctAnswers: [0, 1, 2, 3],
+        multipleCorrect: true,
+      },
+      {
+        id: "qp-5",
+        text: "What will this decorator do?\n\n```python\ndef timer(func):\n    def wrapper(*args, **kwargs):\n        start = time.time()\n        result = func(*args, **kwargs)\n        end = time.time()\n        print(f\"Time: {end - start}\")\n        return result\n    return wrapper\n\n@timer\ndef slow_function():\n    time.sleep(1)\n```",
+        options: [
+          "Measure and print execution time of the function",
+          "Make the function run faster",
+          "Delay the function execution",
+          "Cache the function results",
+        ],
+        correctAnswers: [0],
+        multipleCorrect: false,
+      },
+    ],
+  },
+];
+
 export const courses: Course[] = [
   {
     id: "tdt4172",
@@ -200,6 +327,13 @@ export const courses: Course[] = [
         year: "2023",
         semester: "Fall",
         blocks: sampleExamBlocks,
+      },
+      {
+        id: "tdt4172-2024-sample",
+        title: "Sample Exam (Math & Code)",
+        year: "2024",
+        semester: "Sample",
+        blocks: mathCodeExamBlocks,
       },
     ],
   },
