@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Home, Clock, CheckCircle, XCircle, PlayCircle, Loader2, Trash2 } from "lucide-react";
+import { Home, Clock, CheckCircle, XCircle, PlayCircle, Loader2, Trash2, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import {
   AlertDialog,
@@ -118,6 +118,21 @@ export default function History() {
     toast({
       title: "Resuming exam",
       description: "Loading your saved progress...",
+    });
+  };
+
+  const handleReviewExam = (attempt: any) => {
+    // Convert user_answers object to array format expected by Results page
+    const userAnswersArray = Object.values(attempt.user_answers);
+    
+    // Navigate to results page with the completed exam data
+    navigate("/results", {
+      state: {
+        blockScores: attempt.block_scores,
+        userAnswers: userAnswersArray,
+        examBlocks: attempt.exam_data,
+        attemptId: attempt.id,
+      },
     });
   };
 
@@ -278,6 +293,17 @@ export default function History() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
+                      {attempt.status === "completed" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleReviewExam(attempt)}
+                          className="gap-2"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Review
+                        </Button>
+                      )}
                       {(attempt.status === "in_progress" || attempt.status === "abandoned") && (
                         <Button
                           size="sm"
