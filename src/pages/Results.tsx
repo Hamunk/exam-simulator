@@ -1,6 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { BlockScore, ExamBlock, UserAnswer } from "@/types/exam";
-import { examBlocks } from "@/data/examData";
 import { ScoreDisplay } from "@/components/exam/ScoreDisplay";
 import { QuestionCard } from "@/components/exam/QuestionCard";
 import { BlockHeader } from "@/components/exam/BlockHeader";
@@ -14,7 +13,7 @@ export default function Results() {
   const navigate = useNavigate();
   const blockScores = (location.state?.blockScores || []) as BlockScore[];
   const userAnswers = (location.state?.userAnswers || []) as UserAnswer[];
-  const blocks = (location.state?.examBlocks || examBlocks) as ExamBlock[];
+  const blocks = (location.state?.examBlocks || []) as ExamBlock[];
   const [showReview, setShowReview] = useState(false);
 
   const totalScore = blockScores.reduce((sum, bs) => sum + bs.score, 0);
@@ -55,7 +54,7 @@ export default function Results() {
             Block Breakdown
           </h2>
           {blockScores.map((blockScore, index) => {
-            const block = examBlocks.find((b) => b.id === blockScore.blockId);
+            const block = blocks.find((b) => b.id === blockScore.blockId);
             return (
               <ScoreDisplay
                 key={blockScore.blockId}
