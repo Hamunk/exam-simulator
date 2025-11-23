@@ -10,7 +10,10 @@ export function useCourses() {
     const coursesMap = new Map<string, Course>();
     
     hardcodedCourses.forEach(course => {
-      coursesMap.set(course.code.toLowerCase(), { ...course });
+      coursesMap.set(course.code.toLowerCase(), { 
+        ...course,
+        exams: [...course.exams] // Deep copy to prevent mutation
+      });
     });
 
     // Add user-created exams to existing courses or create new courses
@@ -34,8 +37,10 @@ export function useCourses() {
         course.exams.push(exam);
       } else {
         // Create new course for this exam
+        // Normalize course ID to be URL-safe
+        const normalizedId = `user-${courseKey.replace(/\s+/g, '-')}`;
         coursesMap.set(courseKey, {
-          id: `user-${courseKey}`,
+          id: normalizedId,
           code: userExam.course_code,
           name: userExam.course_name,
           exams: [exam],
