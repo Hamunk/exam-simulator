@@ -225,6 +225,7 @@ const CreateExam = () => {
   const handleSubmitExam = async () => {
     if (!validateCurrentBlock()) return;
     if (!user || !basicInfo || !structure) return;
+    if (isSubmitting) return; // Prevent duplicate submissions
 
     setIsSubmitting(true);
     try {
