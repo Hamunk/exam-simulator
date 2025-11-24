@@ -41,6 +41,8 @@ export default function Auth() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const [forceShow, setForceShow] = useState(false);
+
   // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {
@@ -48,6 +50,23 @@ export default function Auth() {
       navigate(from, { replace: true });
     }
   }, [user, loading, navigate, location]);
+
+  // Timeout fallback - don't stay in loading forever
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Auth loading timeout - forcing display');
+        setForceShow(true);
+        toast({
+          title: "Session issue detected",
+          description: "Please try logging in again.",
+          variant: "destructive",
+        });
+      }
+    }, 5000);
+
+    return () => clearTimeout(timeout);
+  }, [loading, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,7 +162,7 @@ export default function Auth() {
     }
   };
 
-  if (loading) {
+  if (loading && !forceShow) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
