@@ -6,12 +6,11 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Header } from "@/components/Header";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Check, BookOpen, HelpCircle, Upload, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Check, BookOpen, HelpCircle, Upload, X, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCourses } from "@/hooks/useCourses";
@@ -21,6 +20,8 @@ import { ExamBlock, Question } from "@/types/exam";
 import { validateExamJson, ExamJson } from "@/lib/examJsonValidator";
 import { ExamJsonGuide } from "@/components/exam/ExamJsonGuide";
 import { ExamJsonPreview } from "@/components/exam/ExamJsonPreview";
+import { RichTextEditor } from "@/components/exam/RichTextEditor";
+import { useExamDrafts } from "@/hooks/useExamDrafts";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -77,19 +78,69 @@ const CreateExam = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { courses } = useCourses();
+  const { saveDraft } = useExamDrafts();
   const [step, setStep] = useState<"basic" | "structure" | "blocks">("basic");
   const [basicInfo, setBasicInfo] = useState<BasicInfo | null>(null);
   const [structure, setStructure] = useState<Structure | null>(null);
   const [blocks, setBlocks] = useState<BlockData[]>([]);
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [showJsonUpload, setShowJsonUpload] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewData, setPreviewData] = useState<ExamJson | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Pre-fill course info from navigation state
-  const state = location.state as { courseCode?: string; courseName?: string } | null;
+  // Pre-fill course info from navigation state or draft
+  const state = location.state as { courseCode?: string; courseName?: string; draft?: any } | null;
+
+  // Auto-save draft every 30 seconds
+  useEffect(() => {
+    if (step === "blocks" && basicInfo && structure && blocks.length > 0) {
+      autoSaveTimerRef.current = setInterval(() => {
+        handleSaveDraft(true); // silent save
+      }, 30000);
+    }
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+      }
+    };
+  }, [step, basicInfo, structure, blocks]);
+
+  // Load draft if passed in state
+  useEffect(() => {
+    if (state?.draft) {
+      const draft = state.draft;
+      setDraftId(draft.id);
+      setBasicInfo({
+        courseCode: draft.course_code,
+        examTitle: draft.exam_title,
+        examYear: draft.exam_year,
+        examSemester: draft.exam_semester,
+        isPublic: draft.is_public,
+      });
+
+      if (draft.draft_data) {
+        const draftData = draft.draft_data;
+        if (draftData.structure) {
+          setStructure(draftData.structure);
+        }
+        if (draftData.blocks) {
+          setBlocks(draftData.blocks);
+        }
+        if (draftData.currentStep) {
+          setStep(draftData.currentStep);
+        }
+        if (draftData.currentBlockIndex !== undefined) {
+          setCurrentBlockIndex(draftData.currentBlockIndex);
+        }
+      }
+    }
+  }, []);
 
   const basicForm = useForm<BasicInfo>({
     resolver: zodResolver(basicInfoSchema),
@@ -345,6 +396,60 @@ const CreateExam = () => {
     setShowJsonUpload(true);
   };
 
+  const handleSaveDraft = async (silent = false) => {
+    if (!user || !basicInfo) return;
+
+    setIsSavingDraft(true);
+    try {
+      const course = courses.find(
+        (c) => c.code.toLowerCase() === basicInfo.courseCode.toLowerCase()
+      );
+
+      const draftData = {
+        structure,
+        blocks,
+        currentStep: step,
+        currentBlockIndex,
+      };
+
+      const result = await saveDraft({
+        id: draftId || undefined,
+        course_code: basicInfo.courseCode,
+        course_name: course?.name || basicInfo.courseCode,
+        exam_title: basicInfo.examTitle,
+        exam_year: basicInfo.examYear,
+        exam_semester: basicInfo.examSemester,
+        blocks: blocks.map((block, i) => ({
+          id: `block-${i + 1}`,
+          title: block.title,
+          backgroundInfo: block.backgroundInfo,
+          canBeNegative: block.canBeNegative,
+          questions: block.questions.map((q, j) => ({
+            id: `q-${i + 1}-${j + 1}`,
+            text: q.text,
+            options: q.options,
+            correctAnswers: q.correctAnswers,
+            multipleCorrect: q.multipleCorrect,
+          })),
+        })),
+        draft_data: draftData,
+      });
+
+      if (result.error) throw result.error;
+
+      if (!silent) {
+        toast.success("Draft saved successfully!");
+      }
+    } catch (error: any) {
+      console.error("Error saving draft:", error);
+      if (!silent) {
+        toast.error(error.message || "Failed to save draft");
+      }
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
   const handleSubmitExam = async () => {
     if (!validateCurrentBlock()) return;
     if (!user || !basicInfo || !structure) return;
@@ -370,18 +475,34 @@ const CreateExam = () => {
         (c) => c.code.toLowerCase() === basicInfo.courseCode.toLowerCase()
       );
       
-      const { error } = await supabase.from("user_exams").insert([{
-        user_id: user.id,
-        course_code: basicInfo.courseCode,
-        course_name: course?.name || basicInfo.courseCode,
-        exam_title: basicInfo.examTitle,
-        exam_year: basicInfo.examYear,
-        exam_semester: basicInfo.examSemester,
-        blocks: examBlocks as any,
-        is_public: basicInfo.isPublic,
-      }]);
+      if (draftId) {
+        // Update existing draft to published
+        const { error } = await supabase
+          .from("user_exams")
+          .update({
+            blocks: examBlocks as any,
+            is_draft: false,
+            draft_data: null,
+          })
+          .eq("id", draftId);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Create new exam
+        const { error } = await supabase.from("user_exams").insert([{
+          user_id: user.id,
+          course_code: basicInfo.courseCode,
+          course_name: course?.name || basicInfo.courseCode,
+          exam_title: basicInfo.examTitle,
+          exam_year: basicInfo.examYear,
+          exam_semester: basicInfo.examSemester,
+          blocks: examBlocks as any,
+          is_public: basicInfo.isPublic,
+          is_draft: false,
+        }]);
+
+        if (error) throw error;
+      }
 
       toast.success("Exam created successfully!");
       navigate("/");
@@ -809,21 +930,14 @@ def fibonacci(n):
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="backgroundInfo">Background Information (Optional)</Label>
-                    <Textarea
-                      id="backgroundInfo"
-                      value={currentBlock.backgroundInfo}
-                      onChange={(e) =>
-                        updateBlock(currentBlockIndex, { backgroundInfo: e.target.value })
-                      }
-                      placeholder="Context, code, or formulas that apply to all questions in this block..."
-                      rows={4}
-                    />
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Supports LaTeX (use $ or $$) and code blocks (use ```)
-                    </p>
-                  </div>
+                  <RichTextEditor
+                    label="Background Information (Optional)"
+                    value={currentBlock.backgroundInfo}
+                    onChange={(value) =>
+                      updateBlock(currentBlockIndex, { backgroundInfo: value })
+                    }
+                    placeholder="Context, code, or formulas that apply to all questions in this block..."
+                  />
 
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -847,18 +961,14 @@ def fibonacci(n):
                     <h3 className="text-lg font-semibold mb-4">Question {qIndex + 1}</h3>
                     
                     <div className="space-y-4">
-                      <div>
-                        <Label htmlFor={`question-${qIndex}`}>Question Text *</Label>
-                        <Textarea
-                          id={`question-${qIndex}`}
-                          value={question.text}
-                          onChange={(e) =>
-                            updateQuestion(currentBlockIndex, qIndex, { text: e.target.value })
-                          }
-                          placeholder="Enter your question. Use $ for inline math or $$ for display math. Use ```python for code blocks."
-                          rows={3}
-                        />
-                      </div>
+                      <RichTextEditor
+                        label="Question Text *"
+                        value={question.text}
+                        onChange={(value) =>
+                          updateQuestion(currentBlockIndex, qIndex, { text: value })
+                        }
+                        placeholder="Enter your question. Use $ for inline math or $$ for display math. Use ```python for code blocks."
+                      />
 
                       <div className="flex items-center space-x-2">
                         <Checkbox
@@ -946,14 +1056,24 @@ def fibonacci(n):
 
               {/* Navigation */}
               <div className="flex justify-between pt-4">
-                <Button
-                  variant="outline"
-                  onClick={handlePreviousBlock}
-                  disabled={currentBlockIndex === 0}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Previous Block
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handlePreviousBlock}
+                    disabled={currentBlockIndex === 0}
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Previous Block
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSaveDraft(false)}
+                    disabled={isSavingDraft || !basicInfo}
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {isSavingDraft ? "Saving..." : "Save as Draft"}
+                  </Button>
+                </div>
                 <Button onClick={handleNextBlock} disabled={isSubmitting}>
                   {currentBlockIndex === blocks.length - 1 ? (
                     <>

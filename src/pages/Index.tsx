@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Brain, Search, BookOpen, Plus, Bookmark, Award, Target } from "lucide-react";
+import { Brain, Search, BookOpen, Plus, Bookmark, Award, Target, FileText, Trash2, Edit, Eye } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { useCourses } from "@/hooks/useCourses";
 import { useCourseSubscriptions } from "@/hooks/useCourseSubscriptions";
+import { useExamDrafts } from "@/hooks/useExamDrafts";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ const Index = () => {
   const { user } = useAuth();
   const { courses, loading, createUserCourse } = useCourses();
   const { isSubscribed, subscribeToCourse, unsubscribeFromCourse, getCourseStats } = useCourseSubscriptions();
+  const { drafts, loading: draftsLoading, deleteDraft } = useExamDrafts();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
   const [newCourseName, setNewCourseName] = useState("");
@@ -59,6 +61,28 @@ const Index = () => {
         toast.error("This course already exists");
       } else {
         toast.error("Failed to create course");
+      }
+    }
+  };
+
+  const handleResumeDraft = (draft: any) => {
+    navigate("/create-exam", {
+      state: {
+        courseCode: draft.course_code,
+        courseName: draft.course_name,
+        draft,
+      },
+    });
+  };
+
+  const handleDeleteDraft = async (e: React.MouseEvent, draftId: string) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to delete this draft?")) {
+      const result = await deleteDraft(draftId);
+      if (result.error) {
+        toast.error("Failed to delete draft");
+      } else {
+        toast.success("Draft deleted successfully");
       }
     }
   };
@@ -158,6 +182,55 @@ const Index = () => {
                     </Card>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* My Drafts Section */}
+          {user && !draftsLoading && drafts.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-semibold text-foreground mb-6">
+                My Drafts
+              </h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                {drafts.map((draft) => (
+                  <Card
+                    key={draft.id}
+                    className="p-6 hover:shadow-elevated transition-all cursor-pointer group relative"
+                    onClick={() => handleResumeDraft(draft)}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-4 right-4 opacity-60 hover:opacity-100"
+                      onClick={(e) => handleDeleteDraft(e, draft.id)}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                    <div className="space-y-4">
+                      <div className="w-12 h-12 bg-muted/50 rounded-lg flex items-center justify-center group-hover:bg-muted transition-colors">
+                        <FileText className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <div className="inline-block px-2 py-1 bg-warning/10 text-warning rounded text-xs font-semibold mb-2">
+                          DRAFT
+                        </div>
+                        <div className="inline-block px-2 py-1 bg-accent/10 text-accent rounded text-xs font-semibold mb-2 ml-2">
+                          {draft.course_code}
+                        </div>
+                        <h3 className="text-lg font-semibold text-foreground mb-1">
+                          {draft.exam_title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {draft.exam_year} {draft.exam_semester}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Last edited: {new Date(draft.updated_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </div>
             </div>
           )}
