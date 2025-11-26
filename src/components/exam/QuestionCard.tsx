@@ -53,7 +53,74 @@ export function QuestionCard({
     return "";
   };
 
+  const renderMarkdownTable = (tableText: string, key: string) => {
+    const lines = tableText.trim().split('\n');
+    if (lines.length < 2) return tableText;
+
+    // Parse header row
+    const headerCells = lines[0].split('|').map(cell => cell.trim()).filter(cell => cell);
+    
+    // Skip separator row (line 1)
+    // Parse data rows
+    const dataRows = lines.slice(2).map(line => 
+      line.split('|').map(cell => cell.trim()).filter(cell => cell)
+    );
+
+    return (
+      <div key={key} className="my-4 overflow-x-auto">
+        <table className="min-w-full border-collapse border border-border">
+          <thead className="bg-muted">
+            <tr>
+              {headerCells.map((cell, idx) => (
+                <th key={idx} className="border border-border px-4 py-2 text-left font-semibold">
+                  {cell}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {dataRows.map((row, rowIdx) => (
+              <tr key={rowIdx} className="even:bg-muted/30">
+                {row.map((cell, cellIdx) => (
+                  <td key={cellIdx} className="border border-border px-4 py-2">
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   const renderText = (text: string) => {
+    // Check for markdown tables first (|col1|col2|)
+    const tableRegex = /(\|.+\|[\r\n]+\|[-:\s|]+\|[\r\n]+(?:\|.+\|[\r\n]*)+)/g;
+    const parts: (string | JSX.Element)[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = tableRegex.exec(text)) !== null) {
+      // Add text before table
+      if (match.index > lastIndex) {
+        parts.push(renderCodeAndMath(text.slice(lastIndex, match.index)));
+      }
+      
+      // Add table
+      parts.push(renderMarkdownTable(match[1], `table-${match.index}`));
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(renderCodeAndMath(text.slice(lastIndex)));
+    }
+
+    return parts.length > 0 ? <>{parts}</> : renderCodeAndMath(text);
+  };
+
+  const renderCodeAndMath = (text: string) => {
     // Check for code blocks (```language\ncode\n```)
     const codeBlockRegex = /```(\w+)?\n([\s\S]+?)```/g;
     const parts: (string | JSX.Element)[] = [];
