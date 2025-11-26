@@ -180,10 +180,12 @@ export type Database = {
           course_code: string
           course_name: string
           created_at: string
+          draft_data: Json | null
           exam_semester: string
           exam_title: string
           exam_year: string
           id: string
+          is_draft: boolean
           is_public: boolean
           updated_at: string
           user_id: string
@@ -193,10 +195,12 @@ export type Database = {
           course_code: string
           course_name: string
           created_at?: string
+          draft_data?: Json | null
           exam_semester: string
           exam_title: string
           exam_year: string
           id?: string
+          is_draft?: boolean
           is_public?: boolean
           updated_at?: string
           user_id: string
@@ -206,10 +210,12 @@ export type Database = {
           course_code?: string
           course_name?: string
           created_at?: string
+          draft_data?: Json | null
           exam_semester?: string
           exam_title?: string
           exam_year?: string
           id?: string
+          is_draft?: boolean
           is_public?: boolean
           updated_at?: string
           user_id?: string
