@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Calendar, FileText, Plus, CheckCircle2, Trophy, Download } from "lucide-react";
+import { Calendar, FileText, Plus, CheckCircle2, Trophy, Download, Edit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { useCourses } from "@/hooks/useCourses";
@@ -54,6 +54,24 @@ const CourseDetail = () => {
     URL.revokeObjectURL(url);
     
     toast.success("Exam JSON exported successfully!");
+  };
+
+  const handleEditExam = (exam: Exam, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate("/create-exam", { 
+      state: { 
+        editExam: {
+          id: exam.id,
+          course_code: course?.code || "",
+          course_name: course?.name || "",
+          exam_title: exam.title,
+          exam_year: exam.year,
+          exam_semester: exam.semester,
+          is_public: exam.isPublic || false,
+          blocks: exam.blocks,
+        }
+      } 
+    });
   };
 
   if (loading) {
@@ -153,15 +171,26 @@ const CourseDetail = () => {
                             <span>{exam.year}</span>
                           </div>
                           {user && exam.userId === user.id && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={(e) => handleExportExam(exam, e)}
-                              title="Export exam JSON"
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => handleEditExam(exam, e)}
+                                title="Edit exam"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => handleExportExam(exam, e)}
+                                title="Export exam JSON"
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                         {user && attempted && (

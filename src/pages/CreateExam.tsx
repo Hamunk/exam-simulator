@@ -21,6 +21,7 @@ import { validateExamJson, ExamJson } from "@/lib/examJsonValidator";
 import { ExamJsonGuide } from "@/components/exam/ExamJsonGuide";
 import { ExamJsonPreview } from "@/components/exam/ExamJsonPreview";
 import { RichTextEditor } from "@/components/exam/RichTextEditor";
+import { OptionEditor } from "@/components/exam/OptionEditor";
 import { useExamDrafts } from "@/hooks/useExamDrafts";
 import {
   Breadcrumb,
@@ -93,8 +94,10 @@ const CreateExam = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Pre-fill course info from navigation state or draft
-  const state = location.state as { courseCode?: string; courseName?: string; draft?: any } | null;
+  // Pre-fill course info from navigation state, draft, or editExam
+  const state = location.state as { courseCode?: string; courseName?: string; draft?: any; editExam?: any } | null;
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editExamId, setEditExamId] = useState<string | null>(null);
 
   // Auto-save draft every 30 seconds
   useEffect(() => {
@@ -111,7 +114,7 @@ const CreateExam = () => {
     };
   }, [step, basicInfo, structure, blocks]);
 
-  // Load draft if passed in state
+  // Load draft or editExam if passed in state
   useEffect(() => {
     if (state?.draft) {
       const draft = state.draft;
@@ -139,6 +142,37 @@ const CreateExam = () => {
           setCurrentBlockIndex(draftData.currentBlockIndex);
         }
       }
+    } else if (state?.editExam) {
+      const exam = state.editExam;
+      setIsEditMode(true);
+      setEditExamId(exam.id);
+      setBasicInfo({
+        courseCode: exam.course_code,
+        examTitle: exam.exam_title,
+        examYear: exam.exam_year,
+        examSemester: exam.exam_semester,
+        isPublic: exam.is_public,
+      });
+
+      // Convert exam blocks to BlockData format
+      const examBlocks: BlockData[] = exam.blocks.map((block: any) => ({
+        title: block.title,
+        backgroundInfo: block.backgroundInfo || "",
+        canBeNegative: block.canBeNegative || false,
+        questions: block.questions.map((q: any) => ({
+          text: q.text,
+          options: q.options,
+          correctAnswers: q.correctAnswers,
+          multipleCorrect: q.multipleCorrect || false,
+        })),
+      }));
+
+      setStructure({
+        numBlocks: examBlocks.length,
+        questionsPerBlock: examBlocks[0]?.questions.length || 5,
+      });
+      setBlocks(examBlocks);
+      setStep("blocks");
     }
   }, []);
 
@@ -437,6 +471,11 @@ const CreateExam = () => {
 
       if (result.error) throw result.error;
 
+      // Capture the draft ID if this was a new draft
+      if (result.id && !draftId) {
+        setDraftId(result.id);
+      }
+
       if (!silent) {
         toast.success("Draft saved successfully!");
       }
@@ -475,7 +514,24 @@ const CreateExam = () => {
         (c) => c.code.toLowerCase() === basicInfo.courseCode.toLowerCase()
       );
       
-      if (draftId) {
+      if (isEditMode && editExamId) {
+        // Update existing published exam
+        const { error } = await supabase
+          .from("user_exams")
+          .update({
+            course_code: basicInfo.courseCode,
+            course_name: course?.name || basicInfo.courseCode,
+            exam_title: basicInfo.examTitle,
+            exam_year: basicInfo.examYear,
+            exam_semester: basicInfo.examSemester,
+            blocks: examBlocks as any,
+            is_public: basicInfo.isPublic,
+          })
+          .eq("id", editExamId);
+
+        if (error) throw error;
+        toast.success("Exam updated successfully!");
+      } else if (draftId) {
         // Update existing draft to published
         const { error } = await supabase
           .from("user_exams")
@@ -487,6 +543,7 @@ const CreateExam = () => {
           .eq("id", draftId);
 
         if (error) throw error;
+        toast.success("Exam created successfully!");
       } else {
         // Create new exam
         const { error } = await supabase.from("user_exams").insert([{
@@ -502,9 +559,9 @@ const CreateExam = () => {
         }]);
 
         if (error) throw error;
+        toast.success("Exam created successfully!");
       }
 
-      toast.success("Exam created successfully!");
       navigate("/");
     } catch (error: any) {
       console.error("Error creating exam:", error);
@@ -637,7 +694,7 @@ def fibonacci(n):
             <Card className="p-8">
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-3xl font-bold mb-2">Create New Exam</h1>
+                  <h1 className="text-3xl font-bold mb-2">{isEditMode ? "Edit Exam" : "Create New Exam"}</h1>
                   <p className="text-muted-foreground">Step 1: Enter basic exam information</p>
                 </div>
 
@@ -1012,18 +1069,19 @@ def fibonacci(n):
                                   />
                                 </RadioGroup>
                               )}
-                              <Input
-                                value={option}
-                                onChange={(e) => {
-                                  const newOptions = [...question.options];
-                                  newOptions[optIndex] = e.target.value;
-                                  updateQuestion(currentBlockIndex, qIndex, {
-                                    options: newOptions,
-                                  });
-                                }}
-                                placeholder={`Option ${optIndex + 1}`}
-                                className="flex-1"
-                              />
+                              <div className="flex-1">
+                                <OptionEditor
+                                  value={option}
+                                  onChange={(value) => {
+                                    const newOptions = [...question.options];
+                                    newOptions[optIndex] = value;
+                                    updateQuestion(currentBlockIndex, qIndex, {
+                                      options: newOptions,
+                                    });
+                                  }}
+                                  placeholder={`Option ${optIndex + 1}`}
+                                />
+                              </div>
                               {question.options.length > 2 && (
                                 <Button
                                   type="button"
@@ -1078,7 +1136,9 @@ def fibonacci(n):
                   {currentBlockIndex === blocks.length - 1 ? (
                     <>
                       <Check className="w-4 h-4 mr-2" />
-                      {isSubmitting ? "Creating..." : "Create Exam"}
+                      {isSubmitting 
+                        ? (isEditMode ? "Updating..." : "Creating...") 
+                        : (isEditMode ? "Update Exam" : "Create Exam")}
                     </>
                   ) : (
                     <>

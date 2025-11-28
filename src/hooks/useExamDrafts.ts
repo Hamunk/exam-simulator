@@ -77,9 +77,10 @@ export function useExamDrafts() {
           .eq("id", draftData.id);
 
         if (error) throw error;
+        return { error: null, id: draftData.id };
       } else {
         // Create new draft
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("user_exams")
           .insert({
             user_id: user.id,
@@ -92,13 +93,14 @@ export function useExamDrafts() {
             draft_data: draftData.draft_data,
             is_draft: true,
             is_public: false,
-          });
+          })
+          .select('id')
+          .single();
 
         if (error) throw error;
+        await fetchDrafts();
+        return { error: null, id: data?.id };
       }
-
-      await fetchDrafts();
-      return { error: null };
     } catch (error) {
       console.error("Error saving draft:", error);
       return { error };
