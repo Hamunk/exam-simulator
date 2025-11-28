@@ -179,9 +179,9 @@ export default function Exam() {
           [...selectedSet].every((opt) => correctSet.has(opt));
 
         if (allCorrect) {
-          score += 1;
+          score += 2.5;
         } else {
-          score -= 1;
+          score -= 0.833;
         }
       });
 
