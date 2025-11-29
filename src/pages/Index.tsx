@@ -100,12 +100,13 @@ const Index = () => {
             </div>
             <h1 className="text-5xl font-bold text-foreground tracking-tight">Exam Simulator</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Select a course and practice with confidence. Master your exam preparation with comprehensive practice
-              exams. Select a course and practice for your exam. It is recommended to log in before using the site, as
-              this provides a better user experience with richer features. Note that security is expected to be of low
-              quality on this site. User emails and all data are expected to be visible for a strategic and slightly
-              resourced adversary. Email addresses associated with user accounts do not have to be real. This
-              application is created by Halvor Munkeby with the tool Lovable.
+              Select a course and practice for your exam. It is recommended to log in before using the site, as this
+              provides a better user experience with richer features.
+            </p>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Note that security is expected to be of low quality on this site. User emails and all data are expected to
+              be visible for a strategic and slightly resourced adversary. Email addresses associated with user accounts
+              do not have to be real. This application is created by Halvor Munkeby with the tool Lovable.
             </p>
           </div>
 
