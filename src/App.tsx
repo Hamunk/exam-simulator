@@ -10,6 +10,7 @@ import Results from "./pages/Results";
 import Auth from "./pages/Auth";
 import History from "./pages/History";
 import CreateExam from "./pages/CreateExam";
+import DeletedExams from "./pages/DeletedExams";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/history" element={<History />} />
           <Route path="/create-exam" element={<CreateExam />} />
+          <Route path="/deleted-exams" element={<DeletedExams />} />
           <Route path="/course/:courseId" element={<CourseDetail />} />
           <Route path="/exam/:examId" element={<Exam />} />
           <Route path="/results" element={<Results />} />
