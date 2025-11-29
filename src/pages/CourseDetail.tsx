@@ -37,7 +37,7 @@ const CourseDetail = () => {
   const { courseId } = useParams();
   const { user } = useAuth();
   const { getCourseById, loading } = useCourses();
-  const { deleteUserExam } = useUserExams();
+  const { deleteUserExam, refresh: refreshExams } = useUserExams();
   
   const [examToDelete, setExamToDelete] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -98,7 +98,9 @@ const CourseDetail = () => {
     if (error) {
       toast.error("Failed to delete exam");
     } else {
-      toast.success("Exam deleted successfully");
+      toast.success("Exam deleted successfully and backed up");
+      // Explicitly refresh to ensure UI updates
+      await refreshExams();
     }
     
     setExamToDelete(null);
