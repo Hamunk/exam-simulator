@@ -130,12 +130,41 @@ export function useUserExams() {
 
   const deleteUserExam = async (examId: string) => {
     try {
-      const { error } = await supabase
+      // First, fetch the exam to backup
+      const { data: examToDelete, error: fetchError } = await supabase
+        .from("user_exams")
+        .select("*")
+        .eq("id", examId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!examToDelete) throw new Error("Exam not found");
+
+      // Backup the exam to deleted_exams table
+      const { error: backupError } = await supabase
+        .from("deleted_exams")
+        .insert({
+          original_exam_id: examToDelete.id,
+          user_id: examToDelete.user_id,
+          course_code: examToDelete.course_code,
+          course_name: examToDelete.course_name,
+          exam_title: examToDelete.exam_title,
+          exam_year: examToDelete.exam_year,
+          exam_semester: examToDelete.exam_semester,
+          blocks: examToDelete.blocks,
+          is_public: examToDelete.is_public,
+          original_created_at: examToDelete.created_at,
+        });
+
+      if (backupError) throw backupError;
+
+      // Now delete the exam
+      const { error: deleteError } = await supabase
         .from("user_exams")
         .delete()
         .eq("id", examId);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
       
       await fetchUserExams();
       return { error: null };

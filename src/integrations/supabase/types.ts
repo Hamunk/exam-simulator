@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      deleted_exams: {
+        Row: {
+          blocks: Json
+          course_code: string
+          course_name: string
+          deleted_at: string
+          exam_semester: string
+          exam_title: string
+          exam_year: string
+          id: string
+          is_public: boolean
+          original_created_at: string
+          original_exam_id: string
+          user_id: string
+        }
+        Insert: {
+          blocks: Json
+          course_code: string
+          course_name: string
+          deleted_at?: string
+          exam_semester: string
+          exam_title: string
+          exam_year: string
+          id?: string
+          is_public?: boolean
+          original_created_at: string
+          original_exam_id: string
+          user_id: string
+        }
+        Update: {
+          blocks?: Json
+          course_code?: string
+          course_name?: string
+          deleted_at?: string
+          exam_semester?: string
+          exam_title?: string
+          exam_year?: string
+          id?: string
+          is_public?: boolean
+          original_created_at?: string
+          original_exam_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deleted_exams_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exam_attempts: {
         Row: {
           block_scores: Json | null
