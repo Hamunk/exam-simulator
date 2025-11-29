@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Brain, User, LogOut, LogIn, History as HistoryIcon } from "lucide-react";
+import { Brain, User, LogOut, LogIn, History as HistoryIcon, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -48,6 +48,15 @@ export function Header() {
           </button>
           
           <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate("/deleted-exams")}
+              className="gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Deleted Exams</span>
+            </Button>
+            
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -68,6 +77,10 @@ export function Header() {
                   <DropdownMenuItem onClick={() => navigate("/history")}>
                     <HistoryIcon className="w-4 h-4 mr-2" />
                     Exam History
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/deleted-exams")}>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Deleted Exams
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="w-4 h-4 mr-2" />

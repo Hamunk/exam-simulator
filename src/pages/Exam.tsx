@@ -192,7 +192,7 @@ export default function Exam() {
       return {
         blockId: block.id,
         score,
-        maxScore: block.questions.length,
+        maxScore: block.questions.length * 2.5,
         timeSpentSeconds: finalBlockTimeSpent[block.id] || 0,
       };
     });
