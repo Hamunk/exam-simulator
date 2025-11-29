@@ -34,24 +34,24 @@ const Index = () => {
   const filteredCourses = courses.filter(
     (course) =>
       course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.name.toLowerCase().includes(searchQuery.toLowerCase())
+      course.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const myCourses = user ? filteredCourses.filter(course => isSubscribed(course.code)) : [];
-  const availableCourses = filteredCourses.filter(course => !isSubscribed(course.code));
+  const myCourses = user ? filteredCourses.filter((course) => isSubscribed(course.code)) : [];
+  const availableCourses = filteredCourses.filter((course) => !isSubscribed(course.code));
 
   const handleAddCourse = async () => {
     if (!newCourseCode.trim() || !newCourseName.trim()) {
       toast.error("Please fill in both course code and name");
       return;
     }
-    
+
     try {
       await createUserCourse({
         course_code: newCourseCode.toUpperCase(),
         course_name: newCourseName,
       });
-      
+
       toast.success("Course created successfully!");
       setIsAddCourseOpen(false);
       setNewCourseCode("");
@@ -98,12 +98,14 @@ const Index = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-primary rounded-2xl mb-4">
               <Brain className="w-10 h-10 text-primary-foreground" />
             </div>
-            <h1 className="text-5xl font-bold text-foreground tracking-tight">
-              Exam Simulator
-            </h1>
+            <h1 className="text-5xl font-bold text-foreground tracking-tight">Exam Simulator</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Select a course and practice with confidence. Master your exam
-              preparation with comprehensive practice exams.
+              Select a course and practice with confidence. Master your exam preparation with comprehensive practice
+              exams. Select a course and practice for your exam. It is recommended to log in before using the site, as
+              this provides a better user experience with richer features. Note that security is expected to be of low
+              quality on this site. User emails and all data are expected to be visible for a strategic and slightly
+              resourced adversary. Email addresses associated with user accounts do not have to be real. This
+              application is created by Halvor Munkeby with the tool Lovable.
             </p>
           </div>
 
@@ -124,9 +126,7 @@ const Index = () => {
           {/* My Courses Section */}
           {user && myCourses.length > 0 && (
             <div>
-              <h2 className="text-2xl font-semibold text-foreground mb-6">
-                My Courses
-              </h2>
+              <h2 className="text-2xl font-semibold text-foreground mb-6">My Courses</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                 {myCourses.map((course) => {
                   const stats = getCourseStats(course.code);
@@ -155,9 +155,7 @@ const Index = () => {
                           <div className="inline-block px-2 py-1 bg-accent/10 text-accent rounded text-xs font-semibold mb-2">
                             {course.code}
                           </div>
-                          <h3 className="text-lg font-semibold text-foreground mb-1">
-                            {course.name}
-                          </h3>
+                          <h3 className="text-lg font-semibold text-foreground mb-1">{course.name}</h3>
                           <p className="text-sm text-muted-foreground mb-3">
                             {course.exams.length} exam{course.exams.length !== 1 ? "s" : ""} available
                           </p>
@@ -171,9 +169,7 @@ const Index = () => {
                             {stats.averageBestScore > 0 && (
                               <div className="flex items-center gap-1.5">
                                 <Award className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">
-                                  {stats.averageBestScore}% avg
-                                </span>
+                                <span className="text-sm text-muted-foreground">{stats.averageBestScore}% avg</span>
                               </div>
                             )}
                           </div>
@@ -189,9 +185,7 @@ const Index = () => {
           {/* My Drafts Section */}
           {user && !draftsLoading && drafts.length > 0 && (
             <div>
-              <h2 className="text-2xl font-semibold text-foreground mb-6">
-                My Drafts
-              </h2>
+              <h2 className="text-2xl font-semibold text-foreground mb-6">My Drafts</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                 {drafts.map((draft) => (
                   <Card
@@ -218,9 +212,7 @@ const Index = () => {
                         <div className="inline-block px-2 py-1 bg-accent/10 text-accent rounded text-xs font-semibold mb-2 ml-2">
                           {draft.course_code}
                         </div>
-                        <h3 className="text-lg font-semibold text-foreground mb-1">
-                          {draft.exam_title}
-                        </h3>
+                        <h3 className="text-lg font-semibold text-foreground mb-1">{draft.exam_title}</h3>
                         <p className="text-sm text-muted-foreground">
                           {draft.exam_year} {draft.exam_semester}
                         </p>
@@ -238,9 +230,7 @@ const Index = () => {
           {/* Available Courses Grid */}
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-foreground">
-                Available Courses
-              </h2>
+              <h2 className="text-2xl font-semibold text-foreground">Available Courses</h2>
               {user && (
                 <Dialog open={isAddCourseOpen} onOpenChange={setIsAddCourseOpen}>
                   <DialogTrigger asChild>
@@ -252,9 +242,7 @@ const Index = () => {
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Add New Course</DialogTitle>
-                      <DialogDescription>
-                        Create a new course. You can add exams to it later.
-                      </DialogDescription>
+                      <DialogDescription>Create a new course. You can add exams to it later.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
@@ -280,9 +268,7 @@ const Index = () => {
                       <Button variant="outline" onClick={() => setIsAddCourseOpen(false)}>
                         Cancel
                       </Button>
-                      <Button onClick={handleAddCourse}>
-                        Create Course
-                      </Button>
+                      <Button onClick={handleAddCourse}>Create Course</Button>
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -316,9 +302,7 @@ const Index = () => {
                       <div className="inline-block px-2 py-1 bg-accent/10 text-accent rounded text-xs font-semibold mb-2">
                         {course.code}
                       </div>
-                      <h3 className="text-lg font-semibold text-foreground mb-1">
-                        {course.name}
-                      </h3>
+                      <h3 className="text-lg font-semibold text-foreground mb-1">{course.name}</h3>
                       <p className="text-sm text-muted-foreground">
                         {course.exams.length} exam{course.exams.length !== 1 ? "s" : ""} available
                       </p>
@@ -330,9 +314,7 @@ const Index = () => {
 
             {availableCourses.length === 0 && myCourses.length === 0 && (
               <Card className="p-12 text-center">
-                <p className="text-muted-foreground">
-                  No courses found matching "{searchQuery}"
-                </p>
+                <p className="text-muted-foreground">No courses found matching "{searchQuery}"</p>
               </Card>
             )}
           </div>
