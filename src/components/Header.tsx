@@ -48,14 +48,6 @@ export function Header() {
           </button>
           
           <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/deleted-exams")}
-              className="gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Deleted Exams</span>
-            </Button>
             
             {user ? (
               <DropdownMenu>
