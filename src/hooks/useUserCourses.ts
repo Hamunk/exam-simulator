@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface UserCourseData {
+interface PublicCourseData {
   id: string;
-  user_id: string;
   course_code: string;
   course_name: string;
   created_at: string;
@@ -12,16 +11,15 @@ interface UserCourseData {
 }
 
 export function useUserCourses() {
-  const [userCourses, setUserCourses] = useState<UserCourseData[]>([]);
+  const [userCourses, setUserCourses] = useState<PublicCourseData[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchUserCourses = async () => {
     setLoading(true);
     try {
+      // Use the security definer function to get all courses without exposing user_id
       const { data, error } = await supabase
-        .from("user_courses")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .rpc('get_public_courses');
 
       if (error) throw error;
       setUserCourses(data || []);
@@ -57,9 +55,16 @@ export function useUserCourses() {
 
       if (error) throw error;
       
-      // Optimistically add the new course to the list without refetching
+      // Optimistically add the new course to the list (without user_id for public display)
       if (data) {
-        setUserCourses(prev => [data, ...prev]);
+        const publicCourse: PublicCourseData = {
+          id: data.id,
+          course_code: data.course_code,
+          course_name: data.course_name,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        };
+        setUserCourses(prev => [publicCourse, ...prev]);
       }
       
       return data;

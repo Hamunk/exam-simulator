@@ -288,7 +288,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_public_courses: {
+        Args: never
+        Returns: {
+          course_code: string
+          course_name: string
+          created_at: string
+          id: string
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
