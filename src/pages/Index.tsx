@@ -100,8 +100,7 @@ const Index = () => {
             </div>
             <h1 className="text-5xl font-bold text-foreground tracking-tight">Exam Simulator</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Select a course and practice for your exam. It is recommended to log in before using the site, as this
-              provides a better user experience with richer features.
+              Select a course and practice for your exam.
             </p>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Note that security is expected to be of low quality on this site. User emails and all data are expected to
