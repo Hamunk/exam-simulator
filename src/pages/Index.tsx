@@ -103,9 +103,9 @@ const Index = () => {
               Select a course and practice for your exam.
             </p>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Note that security is expected to be of low quality on this site. User emails and all data are expected to
-              be visible for a strategic and slightly resourced adversary. Email addresses associated with user accounts
-              do not have to be real. This application is created by Halvor Munkeby with the tool Lovable.
+              Note that security is of low quality on this site. User emails and all data are expected to be visible for
+              a strategic and slightly resourced adversary. Email addresses associated with user accounts do not have to
+              be real. This application is created by Halvor Munkeby with the tool Lovable.
             </p>
           </div>
 
