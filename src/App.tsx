@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { RequireAuth } from "@/components/RequireAuth";
 import Index from "./pages/Index";
 import CourseDetail from "./pages/CourseDetail";
 import Exam from "./pages/Exam";
@@ -11,6 +12,7 @@ import Auth from "./pages/Auth";
 import History from "./pages/History";
 import CreateExam from "./pages/CreateExam";
 import DeletedExams from "./pages/DeletedExams";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,11 +26,19 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/history" element={<History />} />
           <Route path="/create-exam" element={<CreateExam />} />
           <Route path="/deleted-exams" element={<DeletedExams />} />
           <Route path="/course/:courseId" element={<CourseDetail />} />
-          <Route path="/exam/:examId" element={<Exam />} />
+          <Route 
+            path="/exam/:examId" 
+            element={
+              <RequireAuth>
+                <Exam />
+              </RequireAuth>
+            } 
+          />
           <Route path="/results" element={<Results />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
