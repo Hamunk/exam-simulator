@@ -13,13 +13,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Home, RefreshCw, Users, FileText, ClipboardList, Shield } from "lucide-react";
+import { Loader2, Home, RefreshCw, Users, FileText, ClipboardList, Shield, Mail, Check, X, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Admin() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { users, examAttempts, userExams, loading, isAdmin, refresh } = useAdminData();
+  const { users, examAttempts, userExams, accessRequests, loading, isAdmin, refresh, updateRequestStatus, deleteRequest } = useAdminData();
+  const { toast } = useToast();
 
   if (authLoading || loading) {
     return (
@@ -60,6 +62,33 @@ export default function Admin() {
     }
   };
 
+  const handleApprove = async (id: string) => {
+    const { error } = await updateRequestStatus(id, "approved");
+    if (error) {
+      toast({ title: "Error", description: "Failed to approve request", variant: "destructive" });
+    } else {
+      toast({ title: "Approved", description: "Access request marked as approved" });
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    const { error } = await updateRequestStatus(id, "rejected");
+    if (error) {
+      toast({ title: "Error", description: "Failed to reject request", variant: "destructive" });
+    } else {
+      toast({ title: "Rejected", description: "Access request rejected" });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await deleteRequest(id);
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete request", variant: "destructive" });
+    }
+  };
+
+  const pendingRequests = accessRequests.filter(r => r.status === "pending");
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -82,7 +111,7 @@ export default function Admin() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="p-6">
             <div className="flex items-center gap-3">
               <Users className="w-8 h-8 text-primary" />
@@ -110,11 +139,27 @@ export default function Admin() {
               </div>
             </div>
           </Card>
+          <Card className="p-6">
+            <div className="flex items-center gap-3">
+              <Mail className="w-8 h-8 text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Pending Requests</p>
+                <p className="text-2xl font-bold">{pendingRequests.length}</p>
+              </div>
+            </div>
+          </Card>
         </div>
 
         <Card className="p-6">
-          <Tabs defaultValue="users">
+          <Tabs defaultValue="requests">
             <TabsList className="mb-6">
+              <TabsTrigger value="requests" className="gap-2">
+                <Mail className="w-4 h-4" />
+                Access Requests
+                {pendingRequests.length > 0 && (
+                  <Badge variant="destructive" className="ml-1">{pendingRequests.length}</Badge>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="users" className="gap-2">
                 <Users className="w-4 h-4" />
                 Users
@@ -128,6 +173,81 @@ export default function Admin() {
                 Created Exams
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="requests">
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Requested</TableHead>
+                      <TableHead>Reviewed</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {accessRequests.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          No access requests
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      accessRequests.map((request) => (
+                        <TableRow key={request.id}>
+                          <TableCell className="font-medium">{request.email}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                request.status === "approved"
+                                  ? "default"
+                                  : request.status === "rejected"
+                                  ? "destructive"
+                                  : "secondary"
+                              }
+                            >
+                              {request.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatDate(request.created_at)}</TableCell>
+                          <TableCell>{request.reviewed_at ? formatDate(request.reviewed_at) : "-"}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              {request.status === "pending" && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleApprove(request.id)}
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleReject(request.id)}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDelete(request.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
 
             <TabsContent value="users">
               <div className="rounded-md border">
