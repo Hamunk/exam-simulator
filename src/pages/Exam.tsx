@@ -75,7 +75,7 @@ export default function Exam() {
   const [isSaving, setIsSaving] = useState(false);
   
   // Auto-save reference
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Refs for timer stability
   const remainingSecondsRef = useRef(remainingSeconds);

@@ -92,7 +92,7 @@ const CreateExam = () => {
   const [previewData, setPreviewData] = useState<ExamJson | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Pre-fill course info from navigation state, draft, or editExam
   const state = location.state as { courseCode?: string; courseName?: string; draft?: any; editExam?: any } | null;
